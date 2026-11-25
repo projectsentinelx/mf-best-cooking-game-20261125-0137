@@ -261,16 +261,19 @@ function wallDressing(ctx) {
     ctx.save();
     ctx.translate(dx, rodY + 6);
     ctx.rotate(tilt);
-    ctx.fillStyle = 'rgba(10,18,18,0.34)';
-    ctx.fillRect(2, 3, 36, 52);
-    ctx.fillStyle = 'rgba(226,216,192,0.2)';
+    ctx.fillStyle = 'rgba(8,16,16,0.45)';
+    ctx.fillRect(3, 4, 36, 52);
+    ctx.fillStyle = 'rgba(236,226,200,0.44)';
     ctx.fillRect(0, 0, 36, 52);
-    ctx.strokeStyle = 'rgba(196,222,212,0.14)';
+    ctx.strokeStyle = 'rgba(198,224,214,0.28)';
     ctx.lineWidth = 1;
     ctx.strokeRect(0.5, 0.5, 35, 51);
-    ctx.fillStyle = 'rgba(206,232,222,0.2)';
-    for (let i = 0; i < 4; i += 1) ctx.fillRect(6, 12 + i * 9, i === 3 ? 14 : 24, 1.6);
-    ctx.fillStyle = 'rgba(60,74,66,0.7)';
+    // the ink on the slip: a dish line, two components, a price
+    ctx.fillStyle = 'rgba(40,48,42,0.62)';
+    ctx.fillRect(5, 8, 20, 2.4);
+    ctx.fillStyle = 'rgba(52,60,52,0.42)';
+    for (let i = 0; i < 4; i += 1) ctx.fillRect(6, 16 + i * 7.5, i === 3 ? 13 : 22, 1.5);
+    ctx.fillStyle = 'rgba(60,74,66,0.85)';
     ctx.fillRect(14, -3, 8, 7);
     ctx.restore();
   }

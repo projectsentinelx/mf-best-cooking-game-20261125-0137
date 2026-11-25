@@ -83,7 +83,13 @@ export function drawChef(ctx, chef, t) {
   ctx.lineTo(x + 8 - stride, y - 2);
   ctx.stroke();
 
-  // apron body
+  // apron body: the key is high and to the left, so the apron carries a rim of light down its
+  // left edge and a soft shadow off its right, and it never melts into the pale counter behind
+  ctx.save();
+  ctx.shadowColor = 'rgba(40,24,12,0.5)';
+  ctx.shadowBlur = 7;
+  ctx.shadowOffsetX = 2;
+  ctx.shadowOffsetY = 3;
   ctx.fillStyle = '#f2ede2';
   ctx.beginPath();
   ctx.moveTo(x - 15, y - 46 + bob);
@@ -92,10 +98,17 @@ export function drawChef(ctx, chef, t) {
   ctx.lineTo(x - 18, y - 18);
   ctx.closePath();
   ctx.fill();
+  ctx.restore();
   ctx.fillStyle = '#dcd4c4';
   ctx.fillRect(x - 18, y - 26, 36, 5);
   ctx.fillStyle = '#8a2f33';
   ctx.fillRect(x - 3, y - 46 + bob, 6, 16);
+  ctx.strokeStyle = 'rgba(255,248,232,0.9)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(x - 14, y - 45 + bob);
+  ctx.quadraticCurveTo(x - 17, y - 32, x - 18, y - 19);
+  ctx.stroke();
 
   // arms: the back one hangs loose, the front one comes up to whatever is carried
   const reach = chef.carry ? 1 : 0;

@@ -2,7 +2,7 @@
 // when a dish goes out — the lamp flares, the plate slides under it, and it fades as the room takes
 // it away. The pass is the end of every route through the kitchen, so it gets the brightest light.
 import { FONT, PALETTE } from './config.js';
-import { drawDish, drawPlateBase } from './food.js';
+import { drawServedDish } from './dishes.js';
 import { fillRound, castShadow, lightPool, steamPuff } from './paint.js';
 
 const PLATE_LIFE = 9;
@@ -119,34 +119,29 @@ export function drawPass(ctx, pass, t) {
   // every plate waiting under the lamp, newest nearest the middle
   const shelfY = box.y + box.h - 12;
 
-  // the shelf's own kit, at the near end by the bell: clean plates waiting in a stack and the
-  // service cloth folded beside them. Drawn before the waiting dishes so a dish sits in front.
-  const nearX = box.x + box.w * 0.62;
-  castShadow(ctx, nearX, shelfY - 4, 40, 12, 0.45);
-  for (let i = 0; i < 3; i += 1) {
-    const py = shelfY - 6 - i * 6;
-    ctx.fillStyle = 'rgba(96,84,62,0.55)';
-    ctx.beginPath();
-    ctx.ellipse(nearX, py + 2, 30, 7, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#e7ddc6';
-    ctx.beginPath();
-    ctx.ellipse(nearX, py, 30, 7, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(255,250,235,0.65)';
-    ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    ctx.ellipse(nearX, py - 1.5, 21, 4.4, 0, Math.PI, Math.PI * 2);
-    ctx.stroke();
+  // the shelf's own kit at the near end by the bell: clean plates waiting in a stack, so the pass
+  // reads as a working shelf. Drawn before the waiting dishes so a dish sits in front, and cleared
+  // away when three dishes are waiting and the shelf is full.
+  const nearX = box.x + box.w - 62;
+  if (pass.plates.length < 3) {
+    castShadow(ctx, nearX, shelfY - 4, 40, 12, 0.45);
+    for (let i = 0; i < 3; i += 1) {
+      const py = shelfY - 6 - i * 6;
+      ctx.fillStyle = 'rgba(96,84,62,0.55)';
+      ctx.beginPath();
+      ctx.ellipse(nearX, py + 2, 30, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#e7ddc6';
+      ctx.beginPath();
+      ctx.ellipse(nearX, py, 30, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,250,235,0.65)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.ellipse(nearX, py - 1.5, 21, 4.4, 0, Math.PI, Math.PI * 2);
+      ctx.stroke();
+    }
   }
-  castShadow(ctx, nearX + 58, shelfY - 2, 22, 7, 0.3);
-  fillRound(ctx, nearX + 36, shelfY - 18, 46, 14, 4, '#efe5cd');
-  ctx.fillStyle = 'rgba(168,56,44,0.8)';
-  ctx.fillRect(nearX + 36, shelfY - 12, 46, 3.5);
-  ctx.fillStyle = 'rgba(0,0,0,0.14)';
-  ctx.fillRect(nearX + 36, shelfY - 7, 46, 2);
-  ctx.fillStyle = 'rgba(255,255,255,0.3)';
-  ctx.fillRect(nearX + 38, shelfY - 18, 42, 2);
 
   // the docket spike hung on the frame, its tickets still curled from the pass
   ctx.save();
@@ -174,14 +169,18 @@ export function drawPass(ctx, pass, t) {
   }
   ctx.restore();
 
-  for (let i = 0; i < pass.plates.length; i += 1) {
+  // every plate waiting under the lamp, spread across the shelf and clear of the clean stack
+  const count = pass.plates.length;
+  const slot = count > 1 ? Math.min(112, (box.w - 168) / (count - 1)) : 0;
+  const startX = count === 1 ? box.x + box.w / 2 : count === 2 ? box.x + 118 : box.x + 84;
+  for (let i = 0; i < count; i += 1) {
     const plate = pass.plates[i];
     const age = 1 - plate.life;
-    const x = box.x + 108 + i * 100 + age * 20;
+    const x = startX + i * slot + age * 14;
     ctx.save();
     ctx.globalAlpha = Math.min(1, plate.life * 2.2);
     castShadow(ctx, x, shelfY - 4, 60, 15, 0.5);
-    drawDish(ctx, plate.recipe, x, shelfY - 18 - age * 6, 108);
+    drawServedDish(ctx, plate.recipe, x, shelfY - 20 - age * 6, 116);
     // the lamp lands on the dish itself — the brightest thing in the room
     const lit = ctx.createRadialGradient(x - 12, shelfY - 40, 4, x - 8, shelfY - 34, 74);
     lit.addColorStop(0, 'rgba(255,226,168,0.16)');

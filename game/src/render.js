@@ -7,7 +7,7 @@ import { drawStations } from './stations.js';
 import { drawChef } from './chef.js';
 import { drawRail, drawRushBanner } from './hud.js';
 import { fillRound, star } from './paint.js';
-import { drawDish } from './food.js';
+import { drawServedDish } from './dishes.js';
 import { recipeById } from './recipes.js';
 import { SCREEN_OVER, SCREEN_PAUSED, SCREEN_PLAY, SCREEN_TITLE, shiftReport } from './world.js';
 import { INGREDIENTS } from './pantry.js';
@@ -157,7 +157,7 @@ function drawOver(ctx, world) {
   // the house plate, drawn by the same code that draws it mid-service
   const housePlate = recipeById('melt');
   if (housePlate) {
-    drawDish(ctx, housePlate, x + w - 130, y + 210, 190);
+    drawServedDish(ctx, housePlate, x + w - 130, y + 210, 190);
     ctx.font = `600 12px ${FONT}`;
     ctx.fillStyle = PALETTE.muted;
     ctx.textAlign = 'center';

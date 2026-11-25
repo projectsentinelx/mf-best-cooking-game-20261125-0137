@@ -237,31 +237,66 @@ function drawCrate(ctx, crate) {
   ctx.restore();
 }
 
-/** The cook's arm coming over the board, sleeve rolled, hand on the knife handle. */
-function drawChopArm(ctx, box) {
+/** The cook's working arm: a rolled sleeve to the elbow, then a bare forearm down to the knife. */
+function drawChopArm(ctx, box, chef) {
   const hx = box.x + box.w / 2 + 12;
   const hy = box.y + 50;
+  // shoulder → elbow → hand, so the arm bends over the board instead of hanging like a post
+  const fx = chef && typeof chef.facing === 'number' ? chef.facing : 1;
+  const sx = chef && typeof chef.x === 'number' ? chef.x + 12 * fx : hx - 112;
+  const sy = chef && typeof chef.y === 'number' ? chef.y - 52 : hy - 78;
+  const ex = sx + 30 * fx;
+  const ey = sy + 34;
   ctx.save();
   ctx.lineCap = 'round';
-  ctx.strokeStyle = 'rgba(0,0,0,0.2)';
-  ctx.lineWidth = 21;
+  ctx.lineJoin = 'round';
+  // the sleeve, with a dark edge so it separates from the white apron behind it
+  ctx.strokeStyle = 'rgba(28,18,10,0.4)';
+  ctx.lineWidth = 24;
   ctx.beginPath();
-  ctx.moveTo(hx - 100, hy - 52);
-  ctx.lineTo(hx - 4, hy - 4);
+  ctx.moveTo(sx, sy);
+  ctx.quadraticCurveTo(sx + 16 * fx, sy + 24, ex, ey);
   ctx.stroke();
   ctx.strokeStyle = '#f4efe5';
-  ctx.lineWidth = 17;
+  ctx.lineWidth = 19;
   ctx.beginPath();
-  ctx.moveTo(hx - 100, hy - 52);
-  ctx.lineTo(hx - 4, hy - 4);
+  ctx.moveTo(sx, sy);
+  ctx.quadraticCurveTo(sx + 16 * fx, sy + 24, ex, ey);
   ctx.stroke();
+  ctx.strokeStyle = 'rgba(198,182,160,0.75)';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(sx + 3 * fx, sy + 7);
+  ctx.quadraticCurveTo(sx + 15 * fx, sy + 28, ex, ey + 5);
+  ctx.stroke();
+  // the rolled cuff at the elbow
   ctx.strokeStyle = '#d6cdbd';
   ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.moveTo(hx - 40, hy - 24);
-  ctx.lineTo(hx - 30, hy - 17);
+  ctx.moveTo(ex - 10, ey - 3);
+  ctx.lineTo(ex + 4, ey + 7);
   ctx.stroke();
-  ctx.fillStyle = 'rgba(0,0,0,0.16)';
+  // the bare forearm, tapering to the wrist
+  ctx.strokeStyle = 'rgba(28,18,10,0.35)';
+  ctx.lineWidth = 15;
+  ctx.beginPath();
+  ctx.moveTo(ex, ey);
+  ctx.quadraticCurveTo(ex + 6, ey + 40, hx, hy - 6);
+  ctx.stroke();
+  ctx.strokeStyle = '#eec9a4';
+  ctx.lineWidth = 12;
+  ctx.beginPath();
+  ctx.moveTo(ex, ey);
+  ctx.quadraticCurveTo(ex + 6, ey + 40, hx, hy - 6);
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(176,132,96,0.6)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(ex + 4, ey + 10);
+  ctx.quadraticCurveTo(ex + 9, ey + 40, hx + 4, hy - 10);
+  ctx.stroke();
+  // the hand on the handle
+  ctx.fillStyle = 'rgba(0,0,0,0.18)';
   ctx.beginPath();
   ctx.ellipse(hx + 3, hy + 4, 13, 9, -0.35, 0, Math.PI * 2);
   ctx.fill();
@@ -282,7 +317,7 @@ function drawChopArm(ctx, box) {
 }
 
 /** The chopping board, its knife and whatever is on it. */
-function drawBoard(ctx, world) {
+function drawBoard(ctx, world, atBoard) {
   const { board } = world.kitchen;
   const { box } = board;
   castShadow(ctx, box.x + box.w / 2, box.y + box.h - 2, box.w * 0.6, 15, 0.48);
@@ -329,7 +364,7 @@ function drawBoard(ctx, world) {
       drawIngredient(ctx, item.ingredient, 'chopped', box.x + 34, box.y + 82, 34);
       ctx.restore();
     }
-    if (!item.done) drawChopArm(ctx, box);
+    if (!item.done && atBoard) drawChopArm(ctx, box, world.chef);
   }
 }
 
@@ -547,7 +582,7 @@ export function drawStations(ctx, world, t, near) {
   const { kitchen } = world;
   const recipes = world.tickets.map((ticket) => ticket.recipe);
   for (const crate of kitchen.crates) drawCrate(ctx, crate);
-  drawBoard(ctx, world);
+  drawBoard(ctx, world, !!near && near.kind === 'board');
   for (const burner of kitchen.burners) drawBurner(ctx, burner, t);
   drawPlateStation(ctx, kitchen, recipes);
   drawBin(ctx, kitchen);

@@ -8,10 +8,17 @@ import { RECIPES } from './recipes.js';
 
 const FONT = '"Trebuchet MS", "Segoe UI", Verdana, sans-serif';
 
+// The room is painted wider and deeper than the 1280x720 stage. The camera moves in on a station in
+// some scenes, and the bands have to keep going past the frame edge instead of stopping at it.
+const L = -460;
+const R = FIELD.width + 460;
+const W = R - L;
+const BOTTOM = FIELD.height + 460;
+
 function tileWall(ctx) {
   const top = WALL.top;
   const height = WALL.bottom - top;
-  vGradient(ctx, 0, top, FIELD.width, height, '#2a5a58', '#152c2e');
+  vGradient(ctx, L, top, W, height, '#2a5a58', '#152c2e');
   const tileW = 62;
   const tileH = 40;
   ctx.lineWidth = 2;
@@ -19,7 +26,7 @@ function tileWall(ctx) {
   for (let row = 0; row * tileH <= height; row += 1) {
     const y = top + row * tileH;
     const offset = row % 2 === 0 ? 0 : -tileW / 2;
-    for (let col = -1; col * tileW < FIELD.width + tileW; col += 1) {
+    for (let col = -9; col * tileW < R + tileW; col += 1) {
       const x = col * tileW + offset;
       ctx.fillStyle = (row + col) % 4 === 0 ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.07)';
       ctx.fillRect(x + 1, y + 1, tileW - 2, tileH - 2);
@@ -31,8 +38,8 @@ function tileWall(ctx) {
   ctx.lineWidth = 1;
   for (let row = 0; row * tileH <= height; row += 1) {
     ctx.beginPath();
-    ctx.moveTo(0, top + row * tileH + 1);
-    ctx.lineTo(FIELD.width, top + row * tileH + 1);
+    ctx.moveTo(L, top + row * tileH + 1);
+    ctx.lineTo(R, top + row * tileH + 1);
     ctx.stroke();
   }
   const shade = ctx.createLinearGradient(0, top, 0, WALL.bottom);
@@ -40,7 +47,7 @@ function tileWall(ctx) {
   shade.addColorStop(0.45, 'rgba(0,0,0,0.06)');
   shade.addColorStop(1, 'rgba(0,0,0,0.45)');
   ctx.fillStyle = shade;
-  ctx.fillRect(0, top, FIELD.width, height);
+  ctx.fillRect(L, top, W, height);
 }
 
 /** The house menu, chalked on the wall: the five plates the kitchen cooks, and what they pay. */
@@ -165,13 +172,13 @@ function hangingPans(ctx, t) {
 
 /** The far counter: the hot line, the stock pot and the shelf under it. */
 function backCounter(ctx, t) {
-  plank(ctx, 0, BACK.top, FIELD.width, BACK.bottom - BACK.top, PALETTE.counter, '#6b4526', PALETTE.counterTop);
+  plank(ctx, L, BACK.top, W, BACK.bottom - BACK.top, PALETTE.counter, '#6b4526', PALETTE.counterTop);
   ctx.fillStyle = 'rgba(0,0,0,0.3)';
-  ctx.fillRect(0, BACK.top, FIELD.width, 10);
+  ctx.fillRect(L, BACK.top, W, 10);
   ctx.fillStyle = 'rgba(255,214,150,0.14)';
-  ctx.fillRect(0, BACK.top + 10, FIELD.width, 4);
+  ctx.fillRect(L, BACK.top + 10, W, 4);
   ctx.fillStyle = '#4d3019';
-  ctx.fillRect(0, BACK.bottom - 14, FIELD.width, 14);
+  ctx.fillRect(L, BACK.bottom - 14, W, 14);
 
   // the stock pot, simmering between the pans and the pass
   const px = 786;
@@ -201,16 +208,16 @@ function backCounter(ctx, t) {
 
 /** The aisle: a worn floor between the two counters, lit in pools from the lamps above. */
 function aisle(ctx) {
-  vGradient(ctx, 0, 398, FIELD.width, FRONT.top - 398, '#37271c', '#241811');
+  vGradient(ctx, L, 398, W, FRONT.top - 398, '#37271c', '#241811');
   ctx.strokeStyle = 'rgba(0,0,0,0.32)';
   ctx.lineWidth = 2;
   for (let y = 412; y < FRONT.top; y += 18) {
     ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(FIELD.width, y);
+    ctx.moveTo(L, y);
+    ctx.lineTo(R, y);
     ctx.stroke();
   }
-  for (let x = 12; x < FIELD.width; x += 84) {
+  for (let x = L + 12; x < R; x += 84) {
     ctx.strokeStyle = 'rgba(0,0,0,0.2)';
     ctx.beginPath();
     ctx.moveTo(x, 398);
@@ -228,28 +235,110 @@ function aisle(ctx) {
     ctx.fillStyle = 'rgba(0,0,0,0.16)';
     for (let x = x0 + 14; x < x1 - 12; x += 20) ctx.fillRect(x, 417, 2, 34);
   }
+  aisleProps(ctx);
+}
+
+/**
+ * The things a line keeps on the floor at the head and foot of the aisle: a stack of folded cloths,
+ * two prep bowls and a crate of tomatoes coming in. One object each end, both on the runner, both
+ * with a shadow, so the floor between the two counters has something for the eye to land on.
+ */
+function aisleProps(ctx) {
+  // folded cloths, stacked and slightly out of true
+  ctx.save();
+  ctx.translate(86, 440);
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.beginPath();
+  ctx.ellipse(3, 15, 44, 10, 0, 0, Math.PI * 2);
+  ctx.fill();
+  const cloths = [['#e7dcc4', 0], ['#a8402f', 7], ['#efe5cf', 14], ['#8f4030', 21]];
+  for (const [color, lift] of cloths) {
+    fillRound(ctx, -38, 10 - lift, 76, 8, 3, color);
+    ctx.fillStyle = 'rgba(0,0,0,0.16)';
+    ctx.fillRect(-38, 15 - lift, 76, 1.6);
+    ctx.fillStyle = 'rgba(255,255,255,0.14)';
+    ctx.fillRect(-38, 10 - lift, 76, 1.4);
+  }
+  ctx.restore();
+
+  // two prep bowls, the smaller stacked in the larger
+  ctx.save();
+  ctx.translate(178, 436);
+  ctx.fillStyle = 'rgba(0,0,0,0.34)';
+  ctx.beginPath();
+  ctx.ellipse(2, 16, 34, 8, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#3f4a4e';
+  ctx.beginPath();
+  ctx.ellipse(0, 2, 30, 13, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#b9c3c0';
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 27, 11, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#5b6a6d';
+  ctx.beginPath();
+  ctx.ellipse(0, 1, 22, 8, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#4a585b';
+  ctx.beginPath();
+  ctx.ellipse(6, -6, 17, 7, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#c9d2ce';
+  ctx.beginPath();
+  ctx.ellipse(6, -7, 15, 6, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.beginPath();
+  ctx.ellipse(-8, -4, 7, 2.4, -0.3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // a crate of tomatoes waiting to go up to the pass
+  ctx.save();
+  ctx.translate(1150, 436);
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.beginPath();
+  ctx.ellipse(2, 16, 40, 9, 0, 0, Math.PI * 2);
+  ctx.fill();
+  fillRound(ctx, -36, -8, 72, 24, 3, '#6f4c2e');
+  ctx.fillStyle = 'rgba(40,26,14,0.55)';
+  ctx.fillRect(-32, -6, 64, 14);
+  for (const [bx, by, r] of [[-20, -6, 9], [-2, -10, 10], [17, -6, 9], [6, 1, 8], [-12, 2, 8]]) {
+    ctx.fillStyle = '#b93a2b';
+    ctx.beginPath();
+    ctx.arc(bx, by, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.beginPath();
+    ctx.arc(bx - r * 0.3, by - r * 0.35, r * 0.28, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = '#8a5c33';
+  ctx.fillRect(-38, 12, 76, 5);
+  ctx.restore();
 }
 
 /** The pantry counter the cook works along, under the warmest lamp in the room. */
 function frontCounter(ctx) {
-  plank(ctx, 0, FRONT.top, FIELD.width, FRONT.bottom - FRONT.top, '#96663c', '#7a4f28', '#c08a4a');
+  plank(ctx, L, FRONT.top, W, FRONT.bottom - FRONT.top, '#96663c', '#7a4f28', '#c08a4a');
   ctx.fillStyle = 'rgba(0,0,0,0.34)';
-  ctx.fillRect(0, FRONT.top, FIELD.width, 8);
+  ctx.fillRect(L, FRONT.top, W, 8);
   ctx.fillStyle = 'rgba(255,214,150,0.16)';
-  ctx.fillRect(0, FRONT.top + 8, FIELD.width, 3);
+  ctx.fillRect(L, FRONT.top + 8, W, 3);
   // a pool of lamp light across the work surface, strongest over the plate station
   lightPool(ctx, 470, FRONT.top + 40, 330, 'rgba(255,206,132,0.55)', 0.5);
   lightPool(ctx, 1040, FRONT.top + 34, 300, 'rgba(255,214,146,0.6)', 0.55);
   ctx.fillStyle = '#4a2f1d';
-  ctx.fillRect(0, FRONT.bottom - 12, FIELD.width, 12);
+  ctx.fillRect(L, FRONT.bottom - 12, W, 12);
 }
 
 /** The bar front: panelled wood, two niches of produce and the house plaque. */
 function barFront(ctx) {
-  vGradient(ctx, 0, FOREGROUND.top, FIELD.width, 120, '#4a2f1d', '#2c1b0e');
+  vGradient(ctx, L, FOREGROUND.top, W, BOTTOM - FOREGROUND.top, '#4a2f1d', '#2c1b0e');
   ctx.strokeStyle = 'rgba(0,0,0,0.32)';
   ctx.lineWidth = 3;
-  for (let x = 24; x < FIELD.width; x += 168) {
+  for (let x = L + 24; x < R; x += 168) {
     ctx.strokeRect(x, FOREGROUND.top + 14, 150, 60);
   }
   // niches of produce either side of the plaque
@@ -285,7 +374,7 @@ function barFront(ctx) {
 
 export function drawRoom(ctx, t) {
   ctx.fillStyle = PALETTE.night;
-  ctx.fillRect(0, 0, FIELD.width, FIELD.height);
+  ctx.fillRect(L, WALL.top - 320, W, BOTTOM - WALL.top + 320);
   tileWall(ctx);
   chalkboard(ctx);
   shelf(ctx);
@@ -300,5 +389,5 @@ export function drawRoom(ctx, t) {
   vignette.addColorStop(0, 'rgba(0,0,0,0)');
   vignette.addColorStop(1, 'rgba(0,0,0,0.55)');
   ctx.fillStyle = vignette;
-  ctx.fillRect(0, WALL.top, FIELD.width, FIELD.height - WALL.top);
+  ctx.fillRect(L, WALL.top - 200, W, BOTTOM - WALL.top + 200);
 }

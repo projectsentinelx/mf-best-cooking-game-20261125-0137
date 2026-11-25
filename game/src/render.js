@@ -5,7 +5,7 @@ import { FIELD, FONT, PALETTE } from './config.js';
 import { drawRoom } from './room.js';
 import { drawStations } from './stations.js';
 import { drawChef } from './chef.js';
-import { drawRail } from './hud.js';
+import { drawRail, drawRushBanner } from './hud.js';
 import { fillRound, star } from './paint.js';
 import { drawDish } from './food.js';
 import { recipeById } from './recipes.js';
@@ -219,14 +219,27 @@ export function createRenderer(canvas) {
     ctx.setTransform(view.scale, 0, 0, view.scale, view.x, view.y);
 
     const shakeX = world.shake > 0 ? Math.sin(t * 60) * world.shake * 5 : 0;
+    // The camera: the kitchen is painted around a focus point at a zoom, so a scene can stand the
+    // viewer at the chopping board or over the pass while the rail and the clock stay where they
+    // are. At zoom 1 and focus 640,366 this is the wide view the game plays at.
+    const cam = world.camera || { x: FIELD.width / 2, y: 366, zoom: 1 };
     ctx.save();
-    ctx.translate(shakeX, 0);
+    ctx.translate(FIELD.width / 2 + shakeX, FIELD.height / 2);
+    ctx.scale(cam.zoom, cam.zoom);
+    ctx.translate(-cam.x, -cam.y);
     drawRoom(ctx, t);
     drawStations(ctx, world, t, world.screen === 'play' ? world.lastStation : null);
     drawChef(ctx, world.chef, t);
     ctx.restore();
+    // a screen-space vignette closes the frame whatever the camera is doing
+    const edge = ctx.createRadialGradient(FIELD.width / 2, FIELD.height / 2, 240, FIELD.width / 2, FIELD.height / 2, 780);
+    edge.addColorStop(0, 'rgba(0,0,0,0)');
+    edge.addColorStop(1, 'rgba(0,0,0,0.42)');
+    ctx.fillStyle = edge;
+    ctx.fillRect(0, 0, FIELD.width, FIELD.height);
 
     drawRail(ctx, world);
+    drawRushBanner(ctx, world, t);
     if (world.screen === SCREEN_PLAY || world.screen === SCREEN_PAUSED) drawHint(ctx, world);
     drawFootText(ctx, 'WASD / arrows to move · E to act · hold E to chop · click a station to walk there', 'rgba(246,231,205,0.55)', 706, 13);
     drawToasts(ctx, world);

@@ -34,6 +34,11 @@ export function createWorld(random) {
     screen: SCREEN_TITLE,
     sound: null,
     lastStation: null,
+    // What the camera is looking at: the shots move it in for a close-up of a station, and the
+    // live shift leaves it on the wide view of the whole line.
+    camera: { x: 640, y: 366, zoom: 1 },
+    railSlots: 0,
+    banner: null,
   };
   return world;
 }
@@ -56,6 +61,9 @@ export function resetWorld(world) {
   world.over = false;
   world.screen = SCREEN_PLAY;
   world.lastStation = null;
+  world.camera = { x: 640, y: 366, zoom: 1 };
+  world.railSlots = 0;
+  world.banner = null;
 }
 
 function toast(world, text, color) {

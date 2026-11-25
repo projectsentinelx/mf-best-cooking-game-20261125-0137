@@ -3,7 +3,7 @@
 // it away. The pass is the end of every route through the kitchen, so it gets the brightest light.
 import { FONT, PALETTE } from './config.js';
 import { drawDish } from './food.js';
-import { fillRound, lightPool } from './paint.js';
+import { fillRound, lightPool, steamPuff } from './paint.js';
 
 const PLATE_LIFE = 9;
 
@@ -125,6 +125,10 @@ export function drawPass(ctx, pass, t) {
     ctx.save();
     ctx.globalAlpha = Math.min(1, plate.life * 2.2);
     drawDish(ctx, plate.recipe, x, shelfY - 18 - age * 6, 108);
+    // a dish still hot enough to steam under the lamp
+    for (let w = 0; w < 3; w += 1) {
+      steamPuff(ctx, x - 20 + w * 20, shelfY - 52 - w * 9, 7 + w * 2, 0.72 - w * 0.16, w * 1.7 + i);
+    }
     ctx.restore();
   }
 

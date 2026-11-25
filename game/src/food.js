@@ -510,6 +510,32 @@ export function drawPlate(ctx, parts, x, y, size, sauceColor = '#c2663a') {
     const state = part.state === 'burnt' ? 'burnt' : part.done ? (part.method === 'chop' ? 'chopped' : 'seared') : 'raw';
     drawIngredient(ctx, part.ingredient, state, x + spot[0] * size, y + spot[1] * size, size * 0.56 * spot[2]);
   }
+  if (count === 0) return;
+  // the finish: three dots of sauce walked round the rim, and a sprig laid across the top
+  ctx.save();
+  ctx.fillStyle = sauceColor;
+  for (const [dx, dy, r] of [[-0.3, 0.2, 0.03], [-0.19, 0.29, 0.022], [-0.37, 0.06, 0.017]]) {
+    ctx.globalAlpha = 0.82;
+    ctx.beginPath();
+    ctx.arc(x + dx * size, y + dy * size, r * size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 0.9;
+  ctx.strokeStyle = '#5d7f3c';
+  ctx.lineWidth = Math.max(1, size * 0.013);
+  ctx.beginPath();
+  ctx.moveTo(x + size * 0.02, y - size * 0.12);
+  ctx.quadraticCurveTo(x + size * 0.12, y - size * 0.2, x + size * 0.24, y - size * 0.11);
+  ctx.stroke();
+  for (let i = 0; i < 4; i += 1) {
+    const px = x + size * (0.05 + i * 0.05);
+    const py = y - size * (0.145 + Math.sin(i * 1.1) * 0.03);
+    ctx.fillStyle = i % 2 === 0 ? '#7aa055' : '#5c7f3c';
+    ctx.beginPath();
+    ctx.ellipse(px, py - size * 0.018, size * 0.032, size * 0.016, i % 2 === 0 ? -0.6 : 0.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
 }
 
 /** A finished dish plated for a ticket, the pass or the end card: its parts, then its garnish on top. */

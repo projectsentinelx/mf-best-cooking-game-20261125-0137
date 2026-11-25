@@ -13,6 +13,7 @@ export function createChef() {
     phase: 0,
     moving: false,
     armSwing: 0,
+    rush: 0,
   };
 }
 
@@ -48,6 +49,23 @@ export function drawChef(ctx, chef, t) {
   ctx.save();
   ctx.translate(chef.x, chef.y + 4);
   ctx.scale(1.52, 1.52);
+  // a hard service leaves a smear behind the cook: three speed lines and a ghost of the apron
+  if (chef.rush) {
+    ctx.save();
+    ctx.globalAlpha = 0.45;
+    ctx.strokeStyle = 'rgba(255,236,200,0.8)';
+    ctx.lineWidth = 2.4;
+    ctx.lineCap = 'round';
+    for (let i = 0; i < 3; i += 1) {
+      const y0 = -48 + i * 16;
+      ctx.beginPath();
+      ctx.moveTo(-chef.facing * (34 + i * 8), y0);
+      ctx.lineTo(-chef.facing * (62 + i * 14), y0 - 2);
+      ctx.stroke();
+    }
+    ctx.lineCap = 'butt';
+    ctx.restore();
+  }
   ctx.fillStyle = 'rgba(0,0,0,0.32)';
   ctx.beginPath();
   ctx.ellipse(x, y + 4, 22, 8, 0, 0, Math.PI * 2);

@@ -238,6 +238,50 @@ function drawCrate(ctx, crate) {
   ctx.restore();
 }
 
+/** The cook's arm coming over the board, sleeve rolled, hand on the knife handle. */
+function drawChopArm(ctx, box) {
+  const hx = box.x + box.w / 2 + 12;
+  const hy = box.y + 50;
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+  ctx.lineWidth = 21;
+  ctx.beginPath();
+  ctx.moveTo(hx - 100, hy - 52);
+  ctx.lineTo(hx - 4, hy - 4);
+  ctx.stroke();
+  ctx.strokeStyle = '#f4efe5';
+  ctx.lineWidth = 17;
+  ctx.beginPath();
+  ctx.moveTo(hx - 100, hy - 52);
+  ctx.lineTo(hx - 4, hy - 4);
+  ctx.stroke();
+  ctx.strokeStyle = '#d6cdbd';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(hx - 40, hy - 24);
+  ctx.lineTo(hx - 30, hy - 17);
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(0,0,0,0.16)';
+  ctx.beginPath();
+  ctx.ellipse(hx + 3, hy + 4, 13, 9, -0.35, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#eec9a4';
+  ctx.beginPath();
+  ctx.ellipse(hx, hy, 13, 9.5, -0.35, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(176,132,96,0.85)';
+  ctx.lineWidth = 1.6;
+  for (let i = 0; i < 3; i += 1) {
+    ctx.beginPath();
+    ctx.moveTo(hx - 6 + i * 5, hy - 3 + i * 2.4);
+    ctx.lineTo(hx + 2 + i * 5, hy + 3 + i * 2.4);
+    ctx.stroke();
+  }
+  ctx.lineCap = 'butt';
+  ctx.restore();
+}
+
 /** The chopping board, its knife and whatever is on it. */
 function drawBoard(ctx, world) {
   const { board } = world.kitchen;
@@ -259,7 +303,7 @@ function drawBoard(ctx, world) {
     const cx = box.x + box.w / 2 - 10;
     const cy = box.y + 62;
     drawIngredient(ctx, item.ingredient, state, cx, cy, 58);
-    if (!item.done) ring(ctx, cx, cy, 34, 4, item.progress, PALETTE.ok, 'rgba(0,0,0,0.3)');
+    if (!item.done) ring(ctx, cx, cy, 29, 4, item.progress, PALETTE.ok, 'rgba(0,0,0,0.3)');
     const swing = board.stroke > 0 ? -0.5 + (1 - board.stroke) * 1.1 : -0.85;
     ctx.save();
     ctx.translate(cx + 30, box.y + 40);
@@ -277,6 +321,15 @@ function drawBoard(ctx, world) {
     ctx.fillStyle = '#4a3a2a';
     fillRound(ctx, -22, 2, 24, 10, 4, '#4a3a2a');
     ctx.restore();
+
+    // what the knife has already cut: a little heap of pieces at the near edge of the board
+    if (!item.done && item.progress > 0.15) {
+      ctx.save();
+      ctx.globalAlpha = Math.min(0.95, item.progress * 2.4);
+      drawIngredient(ctx, item.ingredient, 'chopped', box.x + 34, box.y + 82, 34);
+      ctx.restore();
+    }
+    if (!item.done) drawChopArm(ctx, box);
   }
 }
 
@@ -339,6 +392,19 @@ function drawBurner(ctx, burner, t) {
   ctx.moveTo(cx + 55, cy);
   ctx.lineTo(cx + 92, cy - 16);
   ctx.stroke();
+  // the sheen of hot butter across the bottom of the pan
+  ctx.save();
+  ctx.globalAlpha = 0.5 + 0.2 * Math.sin(t * 2.4 + burner.index);
+  ctx.fillStyle = 'rgba(255,226,168,0.5)';
+  ctx.beginPath();
+  ctx.ellipse(cx - 12, cy - 10, 30, 10, -0.16, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 0.3;
+  ctx.fillStyle = '#fff6e0';
+  ctx.beginPath();
+  ctx.ellipse(cx - 22, cy - 13, 12, 3.6, -0.2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
   if (item) {
     const state = item.state === 'burnt' ? 'burnt' : item.done ? 'seared' : 'raw';
     drawIngredient(ctx, item.ingredient, state, cx, cy - 6, 64);
@@ -348,6 +414,23 @@ function drawBurner(ctx, burner, t) {
       ring(ctx, cx, cy - 4, 53, 3, item.state === 'burnt' ? 1 : item.progress / 1.2, item.state === 'burnt' ? PALETTE.bad : PALETTE.warn, 'rgba(0,0,0,0.22)');
       ctx.restore();
     }
+    // the spatula, resting across the rim where the cook left it
+    ctx.save();
+    ctx.translate(cx + 26, cy + 20);
+    ctx.rotate(-0.5);
+    ctx.fillStyle = '#3b2f26';
+    ctx.beginPath();
+    ctx.moveTo(-10, -5);
+    ctx.lineTo(10, -5);
+    ctx.lineTo(12, 5);
+    ctx.lineTo(-12, 5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#5a4636';
+    ctx.fillRect(-2, -34, 6, 30);
+    ctx.fillStyle = 'rgba(255,255,255,0.16)';
+    ctx.fillRect(-2, -34, 2, 30);
+    ctx.restore();
   }
 }
 

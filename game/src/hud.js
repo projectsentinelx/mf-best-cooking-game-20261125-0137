@@ -140,11 +140,13 @@ function drawClock(ctx, world, x, y) {
 
   const left = Math.max(0, world.time);
   const fraction = left / SHIFT_SECONDS;
-  ring(ctx, x + CLOCK_W / 2, y + 46, 27, 5, fraction, left < 30 ? PALETTE.bad : PALETTE.brass, 'rgba(255,255,255,0.12)');
+  // brass through the evening, amber once the last minute is in sight, red in the final half minute
+  const clockInk = left < 30 ? PALETTE.bad : left < 62 ? PALETTE.warn : PALETTE.brass;
+  ring(ctx, x + CLOCK_W / 2, y + 46, 27, 5, fraction, clockInk, 'rgba(255,255,255,0.12)');
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.font = `700 21px ${FONT}`;
-  ctx.fillStyle = left < 30 ? PALETTE.bad : PALETTE.text;
+  ctx.fillStyle = left < 30 ? PALETTE.bad : left < 62 ? PALETTE.warn : PALETTE.text;
   ctx.fillText(mmss(left), x + CLOCK_W / 2, y + 46);
 
   ctx.font = `600 9px ${FONT}`;
@@ -166,16 +168,60 @@ function drawClock(ctx, world, x, y) {
   ctx.textBaseline = 'alphabetic';
 }
 
-/** The whole rail: four ticket hooks, then the clock and the takings. */
+/** The whole rail: four ticket hooks (or more, squeezed, when the room is slammed), then the clock. */
 export function drawRail(ctx, world) {
   const plateParts = world.chef.carry && world.chef.carry.kind === 'plate' ? world.chef.carry.parts : world.kitchen.plateStation.plate.parts;
-  for (let slot = 0; slot < RAIL.count; slot += 1) {
-    const x = RAIL.left + slot * RAIL.slot;
-    fillRound(ctx, x, RAIL.top - 4, TICKET_W + 8, TICKET_H + 8, 6, 'rgba(0,0,0,0.22)');
+  const count = world.railSlots > 0 ? Math.max(RAIL.count, Math.min(6, world.railSlots)) : RAIL.count;
+  const slotW = (RAIL.count * RAIL.slot) / count;
+  const scale = Math.min(1, (slotW - 8) / TICKET_W);
+  for (let slot = 0; slot < count; slot += 1) {
+    const x = RAIL.left + slot * slotW;
+    ctx.save();
+    ctx.translate(x, RAIL.top - 4);
+    ctx.scale(scale, scale);
+    fillRound(ctx, 0, 0, TICKET_W + 8, TICKET_H + 8, 6, 'rgba(0,0,0,0.22)');
     const ticket = world.tickets[slot];
-    if (ticket) drawTicket(ctx, ticket, x + 4, RAIL.top, onHand(plateParts, ticket.recipe));
+    if (ticket) drawTicket(ctx, ticket, 4, 4, onHand(plateParts, ticket.recipe));
+    ctx.restore();
   }
   ctx.fillStyle = '#2b1d12';
   ctx.fillRect(RAIL.left - 6, RAIL.top + 1, RAIL.count * RAIL.slot + 2, 3);
   drawClock(ctx, world, CLOCK_X, RAIL.top);
+}
+
+/**
+ * The rush call: when the clock is short and a table has gone red the house throws a banner up over
+ * the line. It is driven by the shift itself, never drawn for a screenshot, and it clears the moment
+ * the last red ticket leaves the rail.
+ */
+export function drawRushBanner(ctx, world, t) {
+  const red = world.tickets.filter((ticket) => ticket.mood === 'urgent').length;
+  if (!world.time || world.time > 62 || red === 0) return;
+  const w = 316;
+  const h = 46;
+  const x = 470;
+  const y = 158;
+  ctx.save();
+  const pulse = 0.72 + 0.28 * Math.abs(Math.sin(t * 3.4));
+  ctx.globalAlpha = 0.92;
+  fillRound(ctx, x, y, w, h, 6, 'rgba(24,14,12,0.94)');
+  ctx.strokeStyle = `rgba(226,86,74,${pulse})`;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = `rgba(226,86,74,${0.75 + 0.25 * pulse})`;
+  fillRound(ctx, x, y, 86, h, 6, `rgba(184,52,42,${0.85})`);
+  ctx.font = `700 22px ${FONT}`;
+  ctx.fillStyle = '#ffefe4';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('RUSH', x + 43, y + h / 2 + 1);
+  ctx.textAlign = 'left';
+  ctx.font = `700 13px ${FONT}`;
+  ctx.fillStyle = PALETTE.brass;
+  ctx.fillText('TABLE WAITING', x + 100, y + 19);
+  ctx.font = `600 11px ${FONT}`;
+  ctx.fillStyle = 'rgba(246,231,205,0.8)';
+  ctx.fillText(`${red} ticket${red === 1 ? '' : 's'} in the red · keep the pass moving`, x + 100, y + 34);
+  ctx.textBaseline = 'alphabetic';
+  ctx.restore();
 }

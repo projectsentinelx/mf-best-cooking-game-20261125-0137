@@ -114,6 +114,19 @@ function chalkboard(ctx) {
     const width = ctx.measureText(recipe.name).width;
     ctx.fillRect(cx + width + 6, cy - 3, Math.max(4, 162 - width - 22), 1);
   }
+
+  // the sixth line the board keeps for the side the bar sends out with every order
+  const sideX = x + 18 + 188;
+  const sideY = y + 50 + 36;
+  ctx.textAlign = 'left';
+  ctx.font = `600 11px ${FONT}`;
+  ctx.fillStyle = 'rgba(246,231,205,0.9)';
+  ctx.fillText('Bread & Butter', sideX, sideY);
+  ctx.textAlign = 'right';
+  ctx.fillStyle = 'rgba(242,192,105,0.95)';
+  ctx.fillText('$6', sideX + 168, sideY);
+  ctx.fillStyle = 'rgba(246,231,205,0.18)';
+  ctx.fillRect(sideX + ctx.measureText('Bread & Butter').width + 6, sideY - 3, 132 - ctx.measureText('Bread & Butter').width, 1);
 }
 
 /** The shelf of dry goods, and the sprig of thyme hung at its end. */
@@ -854,6 +867,121 @@ function barFront(ctx) {
   ctx.fillStyle = 'rgba(255,214,150,0.3)';
   ctx.fillRect(1056, FOREGROUND.top + 50, 76, 3);
 
+  // the service row along the bar ledge: the things a line keeps within reach of the pass lamp —
+  // folded napkins, a cutlery tray, the glasses the room is drinking out of, and the bell. Small,
+  // warm-lit, each with its contact shadow, so the band under the pantry is a working bar.
+  const ledge = FOREGROUND.top + 66;
+
+  // folded napkins, a short stack off true
+  ctx.save();
+  castShadow(ctx, 332, ledge + 2, 46, 9, 0.42);
+  for (const [lift, tilt, w] of [[0, -0.01, 82], [7, 0.008, 78], [14, -0.004, 74]]) {
+    ctx.save();
+    ctx.translate(332, ledge - lift);
+    ctx.rotate(tilt);
+    fillRound(ctx, -w / 2, -7, w, 8, 2, '#e7dcc2');
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.fillRect(-w / 2 + 2, -7, w - 4, 1.6);
+    ctx.fillStyle = 'rgba(122,90,52,0.22)';
+    ctx.fillRect(-w / 2 + 2, 0, w - 4, 1.4);
+    ctx.restore();
+  }
+  ctx.restore();
+
+  // the cutlery tray: three handles and the brass ferrules, laid along it
+  ctx.save();
+  castShadow(ctx, 436, ledge + 2, 54, 9, 0.4);
+  fillRound(ctx, 384, ledge - 14, 104, 14, 3, '#4a2f1a');
+  ctx.fillStyle = 'rgba(255,214,150,0.18)';
+  ctx.fillRect(386, ledge - 14, 100, 2);
+  for (const [hx, rot] of [[400, -0.06], [420, 0.02], [440, -0.03]]) {
+    ctx.save();
+    ctx.translate(hx, ledge - 12);
+    ctx.rotate(rot);
+    ctx.fillStyle = '#cfd9d8';
+    ctx.fillRect(-3, -30, 6, 30);
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.fillRect(-3, -30, 2, 30);
+    ctx.fillStyle = '#a8862f';
+    ctx.fillRect(-3.5, -13, 7, 3);
+    ctx.restore();
+  }
+  ctx.restore();
+
+  // two upended glasses, catching the key along their stems
+  for (const gx of [812, 848]) {
+    ctx.save();
+    castShadow(ctx, gx + 1, ledge + 1, 15, 5, 0.34);
+    ctx.fillStyle = 'rgba(228,244,240,0.34)';
+    ctx.beginPath();
+    ctx.moveTo(gx - 12, ledge - 10);
+    ctx.quadraticCurveTo(gx - 11, ledge - 26, gx - 2, ledge - 27);
+    ctx.lineTo(gx + 2, ledge - 27);
+    ctx.quadraticCurveTo(gx + 11, ledge - 26, gx + 12, ledge - 10);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+    ctx.lineWidth = 1.3;
+    ctx.beginPath();
+    ctx.moveTo(gx - 11, ledge - 11);
+    ctx.quadraticCurveTo(gx - 10, ledge - 25, gx - 2, ledge - 26);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(236,246,240,0.5)';
+    ctx.fillRect(gx - 1, ledge - 36, 2, 10);
+    ctx.beginPath();
+    ctx.ellipse(gx, ledge - 36, 8, 2.2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // the service bell, brass with one bright spot
+  ctx.save();
+  castShadow(ctx, 906, ledge + 2, 20, 7, 0.45);
+  ctx.fillStyle = '#8a6220';
+  ctx.beginPath();
+  ctx.ellipse(900, ledge - 2, 20, 6, 0, 0, Math.PI * 2);
+  ctx.fill();
+  const dome = ctx.createLinearGradient(884, ledge - 22, 916, ledge - 2);
+  dome.addColorStop(0, '#f0c56a');
+  dome.addColorStop(0.55, '#c9962f');
+  dome.addColorStop(1, '#8a6220');
+  ctx.fillStyle = dome;
+  ctx.beginPath();
+  ctx.moveTo(884, ledge - 3);
+  ctx.quadraticCurveTo(886, ledge - 22, 900, ledge - 22);
+  ctx.quadraticCurveTo(914, ledge - 22, 916, ledge - 3);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#fff3cf';
+  ctx.beginPath();
+  ctx.ellipse(894, ledge - 16, 4, 2.4, -0.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#a8791c';
+  ctx.beginPath();
+  ctx.ellipse(900, ledge - 24, 5, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // a stack of side plates at the far end of the ledge
+  ctx.save();
+  castShadow(ctx, 1218, ledge + 2, 40, 8, 0.4);
+  for (let i = 0; i < 4; i += 1) {
+    ctx.fillStyle = '#8c9187';
+    ctx.beginPath();
+    ctx.ellipse(1218, ledge - 4 - i * 6 + 2, 34, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#e2ddcd';
+    ctx.beginPath();
+    ctx.ellipse(1218, ledge - 4 - i * 6, 34, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.ellipse(1218, ledge - 5 - i * 6, 25, 5.4, 0, Math.PI, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.restore();
+
   const px = FIELD.width / 2;
   fillRound(ctx, px - 138, FOREGROUND.top + 20, 276, 42, 6, '#2a1a0e');
   ctx.strokeStyle = PALETTE.brass;
@@ -904,15 +1032,22 @@ export function drawAtmosphere(ctx, t) {
   ctx.fillStyle = haze;
   ctx.fillRect(L, 0, W, BOTTOM);
 
-  // steam off the two pans, made of overlapping ellipses that drift up and fade together
+  // steam off the two pans: a soft body with a brighter core, thinning as it climbs, so it reads as
+  // heat coming off the pan rather than as a smudge hung in front of the wall
   for (const [cx, base] of [[272, 306], [498, 306]]) {
-    for (let i = 0; i < 4; i += 1) {
-      const rise = ((t * 15 + i * 26) % 96);
-      const alpha = Math.max(0, 0.15 - rise * 0.0015);
-      const sway = Math.sin(t * 0.8 + i * 1.6) * 9;
-      ctx.fillStyle = `rgba(255,248,236,${alpha})`;
+    for (let i = 0; i < 5; i += 1) {
+      const rise = ((t * 13 + i * 24) % 104);
+      const life = Math.max(0, 1 - rise / 104);
+      const sway = Math.sin(t * 0.8 + i * 1.6) * 10;
+      const rx = 20 + rise * 0.3;
+      const ry = 13 + rise * 0.14;
+      ctx.fillStyle = `rgba(255,244,228,${0.1 * life})`;
       ctx.beginPath();
-      ctx.ellipse(cx - 12 + i * 8 + sway, base - rise, 26 + rise * 0.22, 15 + rise * 0.12, 0, 0, Math.PI * 2);
+      ctx.ellipse(cx - 12 + i * 7 + sway, base - rise, rx + 9, ry + 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = `rgba(255,250,242,${0.17 * life * life})`;
+      ctx.beginPath();
+      ctx.ellipse(cx - 12 + i * 7 + sway, base - rise - 2, rx * 0.62, ry * 0.7, 0, 0, Math.PI * 2);
       ctx.fill();
     }
   }

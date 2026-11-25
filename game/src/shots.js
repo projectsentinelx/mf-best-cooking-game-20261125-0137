@@ -60,7 +60,7 @@ export function stageShot(name, world) {
     // the pieces it has already made are heaped at the near edge, the ring says how far the chop has
     // run and the cook's whole arm is on it. A finished dish waits on the pass above, a pan still
     // goes on the left. The frame is cut in the gap between two pantry crates, so no label is sliced.
-    world.camera = { x: 782, y: 390, zoom: 1.7 };
+    world.camera = { x: 851, y: 362, zoom: 1.44 };
     world.time = SHIFT_SECONDS - 31;
     world.progress = 0.17;
     world.earned = 44;
@@ -88,7 +88,7 @@ export function stageShot(name, world) {
     // The plate line, a step back: two of three components already down on the plate, the ghost of
     // the third hovering over the well, the badge counting them, the cook arriving with the last one
     // in hand, and two finished dishes waiting under the pass lamp behind.
-    world.camera = { x: 847, y: 430, zoom: 1.45 };
+    world.camera = { x: 1017, y: 392, zoom: 1.55 };
     world.time = 96;
     world.progress = 0.47;
     world.earned = 154;

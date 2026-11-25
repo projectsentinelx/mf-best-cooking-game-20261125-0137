@@ -201,9 +201,19 @@ export function drawRail(ctx, world) {
     ctx.save();
     ctx.translate(x, RAIL.top - 4);
     ctx.scale(scale, scale);
-    fillRound(ctx, 0, 0, TICKET_W + 8, TICKET_H + 8, 6, 'rgba(0,0,0,0.22)');
     const ticket = world.tickets[slot];
-    if (ticket) drawTicket(ctx, ticket, 4, 4, onHand(plateParts, ticket.recipe));
+    if (ticket) {
+      fillRound(ctx, 0, 0, TICKET_W + 8, TICKET_H + 8, 6, 'rgba(0,0,0,0.22)');
+      drawTicket(ctx, ticket, 4, 4, onHand(plateParts, ticket.recipe));
+    } else {
+      // an empty hook: just the clip on the rail, so the wall behind it shows through
+      ctx.fillStyle = 'rgba(32,22,12,0.55)';
+      ctx.fillRect(TICKET_W / 2 - 6, 7, 12, 17);
+      ctx.fillStyle = 'rgba(242,192,105,0.6)';
+      ctx.fillRect(TICKET_W / 2 - 5, 8, 3, 15);
+      ctx.fillStyle = 'rgba(242,192,105,0.4)';
+      ctx.fillRect(TICKET_W / 2 - 7, 11, 14, 2.5);
+    }
     ctx.restore();
   }
   ctx.fillStyle = '#2b1d12';

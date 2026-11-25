@@ -207,10 +207,11 @@ function wallDressing(ctx) {
     ctx.fillRect(bx - 3, rodY - 4, 8, 14);
   }
 
-  // a pale silhouette per tool: bowl of a ladle, loops of a whisk, mesh of a sieve
+  // a pale silhouette per tool: bowl of a ladle, loops of a whisk, mesh of a sieve. The two at the
+  // right of the ticket stack are the only ones the rail leaves visible up here.
   const pale = 'rgba(206,232,222,0.26)';
   const line = 'rgba(214,238,228,0.22)';
-  for (const [kind, tx] of [['ladle', 148], ['whisk', 330], ['sieve', 512], ['ladle', 690], ['ladle', 1028], ['sieve', 1072]]) {
+  for (const [kind, tx] of [['ladle', 1028], ['sieve', 1072]]) {
     ctx.strokeStyle = pale;
     ctx.lineWidth = 2.4;
     ctx.beginPath();
@@ -285,10 +286,130 @@ function wallDressing(ctx) {
       ctx.lineTo(gx + i * 4 + 1, 120);
       ctx.stroke();
     }
-    if (group === 2) {
+  }
+
+  // The strip of wall that actually shows — between the chalkboard and the pass cabinet, above the
+  // spice shelf — was the flattest teal in the frame. A brass rail with the line's ladles, whisk and
+  // sieve hangs here, and a plate ledge at the far end. Everything stops above the jars and sits a
+  // stop paler than the wall, so the band is dressed without competing with the tickets.
+  const toolY = 146;
+  const toolRail = ctx.createLinearGradient(0, toolY, 0, toolY + 6);
+  toolRail.addColorStop(0, 'rgba(238,202,144,0.72)');
+  toolRail.addColorStop(0.45, 'rgba(168,124,72,0.85)');
+  toolRail.addColorStop(1, 'rgba(46,30,14,0.7)');
+  ctx.fillStyle = toolRail;
+  ctx.fillRect(440, toolY, 426, 6);
+  ctx.fillStyle = 'rgba(255,232,186,0.35)';
+  ctx.fillRect(440, toolY, 426, 1.5);
+  for (const bx of [440, 862]) {
+    ctx.fillStyle = 'rgba(28,18,8,0.7)';
+    ctx.fillRect(bx - 4, toolY - 4, 9, 13);
+    ctx.fillStyle = 'rgba(190,146,88,0.5)';
+    ctx.fillRect(bx - 3, toolY - 3, 2, 11);
+  }
+
+  const steel = 'rgba(222,244,234,0.55)';
+  for (const [kind, tx] of [['ladle', 478], ['whisk', 558], ['sieve', 638], ['ladle', 718]]) {
+    // the wall takes the tool's shadow before the tool itself
+    ctx.fillStyle = 'rgba(4,12,12,0.4)';
+    ctx.beginPath();
+    ctx.ellipse(tx + 5, toolY + 38, kind === 'whisk' ? 9 : 11, 12, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // the hook and the shaft
+    ctx.strokeStyle = 'rgba(214,238,228,0.5)';
+    ctx.lineWidth = 3.4;
+    ctx.beginPath();
+    ctx.moveTo(tx, toolY + 5);
+    ctx.lineTo(tx, toolY + 33);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(18,30,28,0.5)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(tx + 2, toolY + 6);
+    ctx.lineTo(tx + 2, toolY + 33);
+    ctx.stroke();
+    // each head keeps its own mass so the run still reads when the cover is thumbnailed
+    if (kind === 'ladle') {
+      ctx.fillStyle = '#b06a3a';
       ctx.beginPath();
-      ctx.moveTo(gx - 2, 108);
-      ctx.lineTo(gx + 12, 112);
+      ctx.ellipse(tx, toolY + 43, 10, 11, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,210,150,0.5)';
+      ctx.beginPath();
+      ctx.ellipse(tx - 3, toolY + 40, 4, 5, -0.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,236,200,0.6)';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.ellipse(tx, toolY + 43, 10, 11, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    } else if (kind === 'whisk') {
+      ctx.strokeStyle = 'rgba(214,238,228,0.5)';
+      ctx.lineWidth = 1.8;
+      for (let i = 0; i < 3; i += 1) {
+        ctx.beginPath();
+        ctx.ellipse(tx, toolY + 41, 4.5 + i * 3.4, 10 + i * 2, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = 'rgba(214,238,228,0.32)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(tx - 9, toolY + 34);
+      ctx.lineTo(tx + 9, toolY + 52);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(tx + 9, toolY + 34);
+      ctx.lineTo(tx - 9, toolY + 52);
+      ctx.stroke();
+    } else {
+      ctx.fillStyle = 'rgba(28,44,40,0.85)';
+      ctx.beginPath();
+      ctx.ellipse(tx, toolY + 35, 14, 5.6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = steel;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(tx, toolY + 35, 14, 5.6, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(222,244,234,0.3)';
+      ctx.lineWidth = 1;
+      for (let i = -3; i <= 3; i += 1) {
+        ctx.beginPath();
+        ctx.moveTo(tx + i * 4, toolY + 31);
+        ctx.lineTo(tx + i * 4, toolY + 39);
+        ctx.stroke();
+      }
+      // the short handle from the rim up to the hook
+      ctx.strokeStyle = 'rgba(214,238,228,0.5)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(tx, toolY + 5);
+      ctx.lineTo(tx, toolY + 30);
+      ctx.stroke();
+    }
+  }
+
+  // the plate ledge at the end of the run, clean plates stacked where the pass can reach them
+  ctx.fillStyle = 'rgba(8,18,18,0.4)';
+  ctx.fillRect(792, toolY + 42, 74, 5);
+  ctx.fillStyle = '#4a2f18';
+  ctx.fillRect(792, toolY + 40, 74, 6);
+  litSurface(ctx, 792, toolY + 40, 74, 3, '#a9713f', '#7d4f2a');
+  for (const sx of [812, 846]) {
+    for (let i = 0; i < 3; i += 1) {
+      const py = toolY + 38 - i * 5;
+      ctx.fillStyle = 'rgba(40,52,48,0.55)';
+      ctx.beginPath();
+      ctx.ellipse(sx, py + 2, 14, 4, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ded8c6';
+      ctx.beginPath();
+      ctx.ellipse(sx, py, 14, 4, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,252,240,0.5)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.ellipse(sx, py - 1, 9, 2.4, 0, Math.PI, Math.PI * 2);
       ctx.stroke();
     }
   }

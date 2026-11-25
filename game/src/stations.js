@@ -237,79 +237,97 @@ function drawCrate(ctx, crate) {
   ctx.restore();
 }
 
-/** The cook's working arm: a rolled sleeve to the elbow, then a bare forearm down to the knife. */
+/**
+ * The cook's working arm: a rolled sleeve from the shoulder to the elbow, then a bare forearm coming
+ * down over the counter edge to the hand on the knife. The elbow is kept near the body and the
+ * forearm near vertical, so the arm reads as an arm at any zoom instead of a tube crossing the frame.
+ */
 function drawChopArm(ctx, box, chef) {
+  const fx = chef && typeof chef.facing === 'number' ? chef.facing : 1;
   const hx = box.x + box.w / 2 + 12;
   const hy = box.y + 50;
-  // shoulder → elbow → hand, so the arm bends over the board instead of hanging like a post
-  const fx = chef && typeof chef.facing === 'number' ? chef.facing : 1;
-  const sx = chef && typeof chef.x === 'number' ? chef.x + 12 * fx : hx - 112;
-  const sy = chef && typeof chef.y === 'number' ? chef.y - 52 : hy - 78;
-  const ex = sx + 30 * fx;
-  const ey = sy + 34;
+  const sx = chef && typeof chef.x === 'number' ? chef.x + 11 * fx : hx - 96;
+  const sy = chef && typeof chef.y === 'number' ? chef.y - 47 : hy - 84;
+  const ex = chef && typeof chef.x === 'number' ? chef.x + 27 * fx : hx - 4;
+  const ey = chef && typeof chef.y === 'number' ? chef.y + 1 : hy - 73;
   ctx.save();
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
-  // the sleeve, with a dark edge so it separates from the white apron behind it
-  ctx.strokeStyle = 'rgba(28,18,10,0.4)';
+
+  // the arm's own shadow falls across the board, down and to the right of the key
+  ctx.strokeStyle = 'rgba(40,24,10,0.22)';
+  ctx.lineWidth = 15;
+  ctx.beginPath();
+  ctx.moveTo(ex + 5, ey + 6);
+  ctx.quadraticCurveTo(ex + 2, ey + 44, hx + 7, hy - 4);
+  ctx.stroke();
+
+  // the sleeve: a dark edge under a warm white, so it separates from the apron behind it
+  ctx.strokeStyle = 'rgba(30,20,12,0.45)';
   ctx.lineWidth = 24;
   ctx.beginPath();
   ctx.moveTo(sx, sy);
-  ctx.quadraticCurveTo(sx + 16 * fx, sy + 24, ex, ey);
+  ctx.quadraticCurveTo(sx + 12 * fx, sy + 28, ex, ey);
   ctx.stroke();
-  ctx.strokeStyle = '#f4efe5';
-  ctx.lineWidth = 19;
+  ctx.strokeStyle = '#f6f1e6';
+  ctx.lineWidth = 20;
   ctx.beginPath();
   ctx.moveTo(sx, sy);
-  ctx.quadraticCurveTo(sx + 16 * fx, sy + 24, ex, ey);
+  ctx.quadraticCurveTo(sx + 12 * fx, sy + 28, ex, ey);
   ctx.stroke();
-  ctx.strokeStyle = 'rgba(198,182,160,0.75)';
-  ctx.lineWidth = 4;
-  ctx.beginPath();
-  ctx.moveTo(sx + 3 * fx, sy + 7);
-  ctx.quadraticCurveTo(sx + 15 * fx, sy + 28, ex, ey + 5);
-  ctx.stroke();
-  // the rolled cuff at the elbow
-  ctx.strokeStyle = '#d6cdbd';
+  // the fold that says the sleeve is rolled, and the cuff itself
+  ctx.strokeStyle = 'rgba(198,182,160,0.7)';
   ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.moveTo(ex - 10, ey - 3);
-  ctx.lineTo(ex + 4, ey + 7);
+  ctx.moveTo(sx + 5 * fx, sy + 10);
+  ctx.quadraticCurveTo(sx + 14 * fx, sy + 30, ex - 2 * fx, ey - 6);
   ctx.stroke();
+  ctx.strokeStyle = '#ded4c2';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(ex - 11, ey - 4);
+  ctx.lineTo(ex + 7, ey + 5);
+  ctx.stroke();
+
   // the bare forearm, tapering to the wrist
-  ctx.strokeStyle = 'rgba(28,18,10,0.35)';
-  ctx.lineWidth = 15;
+  ctx.strokeStyle = 'rgba(30,20,12,0.35)';
+  ctx.lineWidth = 16;
   ctx.beginPath();
   ctx.moveTo(ex, ey);
-  ctx.quadraticCurveTo(ex + 6, ey + 40, hx, hy - 6);
+  ctx.quadraticCurveTo(ex + 3, ey + 42, hx, hy - 5);
   ctx.stroke();
   ctx.strokeStyle = '#eec9a4';
-  ctx.lineWidth = 12;
+  ctx.lineWidth = 13;
   ctx.beginPath();
   ctx.moveTo(ex, ey);
-  ctx.quadraticCurveTo(ex + 6, ey + 40, hx, hy - 6);
+  ctx.quadraticCurveTo(ex + 3, ey + 42, hx, hy - 5);
   ctx.stroke();
-  ctx.strokeStyle = 'rgba(176,132,96,0.6)';
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = 'rgba(176,132,96,0.55)';
+  ctx.lineWidth = 2.4;
   ctx.beginPath();
-  ctx.moveTo(ex + 4, ey + 10);
-  ctx.quadraticCurveTo(ex + 9, ey + 40, hx + 4, hy - 10);
+  ctx.moveTo(ex + 5, ey + 14);
+  ctx.quadraticCurveTo(ex + 7, ey + 44, hx + 4, hy - 9);
   ctx.stroke();
-  // the hand on the handle
-  ctx.fillStyle = 'rgba(0,0,0,0.18)';
+
+  // the hand closed on the handle
+  ctx.fillStyle = 'rgba(0,0,0,0.2)';
   ctx.beginPath();
-  ctx.ellipse(hx + 3, hy + 4, 13, 9, -0.35, 0, Math.PI * 2);
+  ctx.ellipse(hx + 3, hy + 4, 14, 10, -0.35, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = '#eec9a4';
   ctx.beginPath();
-  ctx.ellipse(hx, hy, 13, 9.5, -0.35, 0, Math.PI * 2);
+  ctx.ellipse(hx, hy, 14, 10, -0.35, 0, Math.PI * 2);
   ctx.fill();
-  ctx.strokeStyle = 'rgba(176,132,96,0.85)';
-  ctx.lineWidth = 1.6;
+  ctx.fillStyle = 'rgba(255,236,214,0.5)';
+  ctx.beginPath();
+  ctx.ellipse(hx - 3, hy - 4, 7, 4, -0.35, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(168,124,90,0.9)';
+  ctx.lineWidth = 1.7;
   for (let i = 0; i < 3; i += 1) {
     ctx.beginPath();
-    ctx.moveTo(hx - 6 + i * 5, hy - 3 + i * 2.4);
-    ctx.lineTo(hx + 2 + i * 5, hy + 3 + i * 2.4);
+    ctx.moveTo(hx - 7 + i * 5, hy - 3 + i * 2.6);
+    ctx.lineTo(hx + 2 + i * 5, hy + 4 + i * 2.6);
     ctx.stroke();
   }
   ctx.lineCap = 'butt';
@@ -339,22 +357,51 @@ function drawBoard(ctx, world, atBoard) {
     const cy = box.y + 62;
     drawIngredient(ctx, item.ingredient, state, cx, cy, 58);
     if (!item.done) ring(ctx, cx, cy, 29, 4, item.progress, PALETTE.ok, 'rgba(0,0,0,0.3)');
-    const swing = board.stroke > 0 ? -0.5 + (1 - board.stroke) * 1.1 : -0.85;
+    const swing = board.stroke > 0 ? -0.3 + (1 - board.stroke) * 0.34 : -0.46;
     ctx.save();
-    ctx.translate(cx + 30, box.y + 40);
+    ctx.translate(cx + 26, box.y + 34);
     ctx.rotate(swing);
-    ctx.fillStyle = '#e4e9ed';
+    // the blade's own shadow on the board, so the knife sits on it rather than floating
+    ctx.fillStyle = 'rgba(24,14,6,0.22)';
     ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(46, 7);
-    ctx.lineTo(46, 14);
-    ctx.lineTo(0, 16);
+    ctx.ellipse(26, 13, 30, 5, 0.02, 0, Math.PI * 2);
+    ctx.fill();
+    // a chef's knife: straight spine, a point at the tip, the belly curving back to the heel
+    const steel = ctx.createLinearGradient(0, -2, 0, 18);
+    steel.addColorStop(0, '#f6fafb');
+    steel.addColorStop(0.4, '#c6d3da');
+    steel.addColorStop(0.7, '#eef5f8');
+    steel.addColorStop(1, '#9cadb6');
+    ctx.fillStyle = steel;
+    ctx.beginPath();
+    ctx.moveTo(2, 0);
+    ctx.lineTo(45, 1);
+    ctx.quadraticCurveTo(50, 5, 44, 9);
+    ctx.quadraticCurveTo(24, 15, 2, 14);
     ctx.closePath();
     ctx.fill();
-    ctx.fillStyle = 'rgba(150,170,180,0.5)';
-    ctx.fillRect(6, 10, 38, 3);
-    ctx.fillStyle = '#4a3a2a';
-    fillRound(ctx, -22, 2, 24, 10, 4, '#4a3a2a');
+    ctx.strokeStyle = 'rgba(78,98,110,0.7)';
+    ctx.lineWidth = 1.1;
+    ctx.beginPath();
+    ctx.moveTo(2, 0);
+    ctx.lineTo(45, 1);
+    ctx.quadraticCurveTo(50, 5, 44, 9);
+    ctx.stroke();
+    // the edge catches the key: one bright line along the belly
+    ctx.strokeStyle = 'rgba(255,255,255,0.92)';
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.moveTo(5, 13);
+    ctx.quadraticCurveTo(26, 13.6, 43, 8.6);
+    ctx.stroke();
+    // the bolster, then the handle the hand is closed on
+    ctx.fillStyle = '#93a1aa';
+    ctx.fillRect(-2, -1, 5, 17);
+    fillRound(ctx, -23, 0, 23, 15, 4, '#4a3a2a');
+    ctx.fillStyle = 'rgba(255,214,160,0.28)';
+    ctx.fillRect(-21, 1.5, 19, 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.fillRect(-21, 11, 19, 2);
     ctx.restore();
 
     // what the knife has already cut: a little heap of pieces at the near edge of the board
@@ -489,8 +536,24 @@ function drawBurner(ctx, burner, t) {
     drawIngredient(ctx, item.ingredient, state, cx, cy - 6, 64);
     if (!item.done || item.state === 'burnt') {
       ctx.save();
-      ctx.globalAlpha = 0.85;
-      ring(ctx, cx, cy - 4, 53, 3, item.state === 'burnt' ? 1 : item.progress / 1.2, item.state === 'burnt' ? PALETTE.bad : PALETTE.warn, 'rgba(0,0,0,0.22)');
+      ctx.globalAlpha = 0.9;
+      // the gauge rides the pan's own rim, not a hoop around it: a green band where the sear is
+      // ready, a red band past it, and the amber arc filling toward them
+      const start = -Math.PI / 2;
+      const at = (fraction) => start + Math.PI * 2 * Math.min(1, fraction);
+      const arc = (rx, ry, from, to, color, width) => {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy - 4, rx, ry, 0, at(from), at(to));
+        ctx.stroke();
+      };
+      const span = SEAR_BURN;
+      ctx.lineCap = 'butt';
+      arc(55, 32, 0, 1, 'rgba(0,0,0,0.2)', 6);
+      arc(55, 32, SEAR_READY / span, 0.86, 'rgba(126,208,138,0.42)', 6);
+      arc(55, 32, 0.86, 1, 'rgba(226,86,74,0.4)', 6);
+      arc(47, 27, 0, item.state === 'burnt' ? 1 : item.progress / span, item.state === 'burnt' ? PALETTE.bad : PALETTE.warn, 4);
       ctx.restore();
     }
     // the spatula, resting across the rim where the cook left it
@@ -525,9 +588,9 @@ function drawPlateStation(ctx, kitchen, recipes) {
   ctx.textBaseline = 'alphabetic';
   ctx.fillText('PLATE', box.x + 8, box.y + 14);
 
-  const stackX = box.x + 34;
+  const stackX = box.x + 26;
   for (let i = 0; i < Math.min(station.stack, 6); i += 1) {
-    drawPlateBase(ctx, stackX, box.y + 84 - i * 6, 78);
+    drawPlateBase(ctx, stackX, box.y + 84 - i * 6, 66);
   }
 
   const cx = box.x + 106;
@@ -536,7 +599,7 @@ function drawPlateStation(ctx, kitchen, recipes) {
   if (parts.length > 0) {
     const summary = assemblySummary(parts, recipes);
     drawPlateInProgress(ctx, parts, cx, cy, 132, summary);
-    drawAssemblyBadge(ctx, cx, box.y + box.h - 6, summary);
+    drawAssemblyBadge(ctx, cx, box.y + box.h - 16, summary);
   } else {
     drawPlateBase(ctx, cx, cy, 132);
     ctx.font = `600 11px ${FONT}`;

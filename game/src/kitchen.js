@@ -44,7 +44,7 @@ export function createKitchen() {
     kind: 'board',
     x: 900,
     y: FRONT.top + 18,
-    box: { x: 812, y: COUNTER_Y, w: 158, h: 106 },
+    box: { x: 806, y: COUNTER_Y, w: 158, h: 106 },
     item: null,
     stroke: 0,
   };

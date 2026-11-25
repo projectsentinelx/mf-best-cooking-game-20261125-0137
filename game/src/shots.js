@@ -1,6 +1,10 @@
 // The screenshot scenes behind ?shot=service|chopping|plating|rush. Each one loads the real kitchen,
 // fills the real pans and the real plate, and sets the real rail to a moment a shift passes through —
 // never a mock-up drawn for the camera — so a capture is a frame the game itself would show.
+//
+// Each scene is also a different camera, and every crop edge is chosen to land in a gap: the close
+// shots cut between two pantry crates, never through a label, so a cell reads at thumbnail size with
+// nothing sliced in half.
 import { SHIFT_SECONDS } from './config.js';
 import { rawItem } from './pantry.js';
 import { recipeById } from './recipes.js';
@@ -52,10 +56,11 @@ export function stageShot(name, world) {
   world.screen = SCREEN_PLAY;
 
   if (name === 'chopping') {
-    // At the board, close: the knife is halfway through a tomato, the pieces it has already made
-    // are at the near edge, the ring says how far the chop has run, and the cook's whole arm is on
-    // it — a pan still going on the left, a dish waiting on the pass behind.
-    world.camera = { x: 805, y: 415, zoom: 1.4 };
+    // Close on the board, three-quarter from the pass side: the knife is halfway through a tomato,
+    // the pieces it has already made are heaped at the near edge, the ring says how far the chop has
+    // run and the cook's whole arm is on it. A finished dish waits on the pass above, a pan still
+    // goes on the left. The frame is cut in the gap between two pantry crates, so no label is sliced.
+    world.camera = { x: 782, y: 390, zoom: 1.7 };
     world.time = SHIFT_SECONDS - 31;
     world.progress = 0.17;
     world.earned = 44;
@@ -65,12 +70,12 @@ export function stageShot(name, world) {
     ticket(world, 'omelette', 0.6, 7);
     const board = world.kitchen.board;
     board.item = part('tomato', 'chop', 0.58);
-    board.stroke = 0.55;
+    board.stroke = 0.62;
     world.kitchen.plateStation.plate.parts = [];
     world.kitchen.burners[1].item = part('egg', 'sear', 0.52);
     world.kitchen.burners[1].flare = 0.5;
     steam(world.kitchen, 498, 300, 4, 16);
-    teleportChef(world.chef, 893, 444);
+    teleportChef(world.chef, 880, 452);
     // stood right up against the board so the arm, the knife and the tomato read as one gesture
     world.chef.facing = 1;
     world.chef.carry = null;
@@ -80,9 +85,10 @@ export function stageShot(name, world) {
       world.kitchen.sparks.push({ x: board.x - 14 + (i % 3) * 9, y: 552, vx: -46 + i * 15, vy: -64 - i * 9, life: 0.75, color: i % 3 === 0 ? '#e8604f' : '#8d2a21' });
     }
   } else if (name === 'plating') {
-    // Close on the plate line: two of three components stacked on the plate, the third still to go,
-    // and a finished dish already waiting under the pass lamp behind it.
-    world.camera = { x: 845, y: 372, zoom: 1.45 };
+    // The plate line, a step back: two of three components already down on the plate, the ghost of
+    // the third hovering over the well, the badge counting them, the cook arriving with the last one
+    // in hand, and two finished dishes waiting under the pass lamp behind.
+    world.camera = { x: 847, y: 430, zoom: 1.45 };
     world.time = 96;
     world.progress = 0.47;
     world.earned = 154;
@@ -101,13 +107,13 @@ export function stageShot(name, world) {
     sendToPass(world.kitchen.pass, recipeById('soup'), 0);
     world.kitchen.pass.plates[1].life = 0.72;
     world.kitchen.pass.ring = 0.5;
-    teleportChef(world.chef, 902, 452);
+    teleportChef(world.chef, 900, 456);
     world.chef.facing = 1;
     world.chef.carry = { kind: 'item', item: part('herb', 'chop', 'chopped') };
   } else if (name === 'rush') {
     // The last minutes: five tickets on the rail, two of them red, the clock amber, both pans going,
     // a full pass and a cook moving fast enough to leave a smear.
-    world.camera = { x: 700, y: 402, zoom: 1.14 };
+    world.camera = { x: 640, y: 366, zoom: 1 };
     world.railSlots = 5;
     world.time = 42;
     world.progress = 0.68;
@@ -132,7 +138,7 @@ export function stageShot(name, world) {
     steam(world.kitchen, 272, 300, 4, 18);
     steam(world.kitchen, 498, 300, 4, 18);
     steam(world.kitchen, 786, 292, 3, 14);
-    teleportChef(world.chef, 720, 448);
+    teleportChef(world.chef, 700, 448);
     world.chef.facing = 1;
     world.chef.moving = true;
     world.chef.phase = 1.1;
@@ -152,8 +158,8 @@ export function stageShot(name, world) {
     world.lastStation = null;
     return { screen: SCREEN_OVER, best: 0 };
   } else {
-    // the cover: mid-service — three tickets on the rail, two pans on the heat, a plate two-thirds
-    // built with the third component in hand, and a finished dish already under the pass lamp
+    // the cover: mid-service — four tickets on the rail, two pans on the heat, a plate two-thirds
+    // built with the third component in hand, and three finished dishes under the pass lamp
     world.camera = { x: 640, y: 366, zoom: 1 };
     world.time = 74;
     world.progress = 0.59;
@@ -163,6 +169,7 @@ export function stageShot(name, world) {
     ticket(world, 'melt', 0.3, 12, true);
     ticket(world, 'soup', 0.64, 5);
     ticket(world, 'toast', 0.9, 1);
+    ticket(world, 'tart', 0.48, 7);
     world.kitchen.burners[0].item = part('bread', 'sear', 0.72);
     world.kitchen.burners[1].item = part('mushroom', 'sear', 0.34);
     world.kitchen.burners[1].flare = 0.5;

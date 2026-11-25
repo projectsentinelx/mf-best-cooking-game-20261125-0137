@@ -559,6 +559,11 @@ function backCounter(ctx, t) {
   ctx.fillRect(L, BACK.bottom - 16, W, 16);
   ctx.fillStyle = 'rgba(255,206,140,0.2)';
   ctx.fillRect(L, BACK.bottom - 16, W, 2);
+  // the two lamps over the hot line pool on the boards between the pans, so the counter between
+  // them is a lit work surface and not one flat tan stretch
+  lightPool(ctx, 300, 356, 150, 'rgba(255,208,138,0.5)', 0.5);
+  lightPool(ctx, 640, 362, 210, 'rgba(255,206,132,0.55)', 0.55);
+  lightPool(ctx, 980, 352, 150, 'rgba(255,214,150,0.4)', 0.4);
 
   // the stock pot, simmering between the pans and the pass
   const px = 786;
@@ -739,32 +744,116 @@ function frontCounter(ctx) {
   ctx.fillRect(L, FRONT.bottom - 20, W, 4);
 }
 
-/** The bar front: panelled wood, two niches of produce and the house plaque. */
+/**
+ * The bar front the frame is shot over: panelled wood, two lamp-lit alcoves either side of the house
+ * plaque — the bottles the room is drinking on one side, the bread basket on the other — so the band
+ * under the pass is a lit bar and not a dark strip.
+ */
 function barFront(ctx) {
   vGradient(ctx, L, FOREGROUND.top, W, BOTTOM - FOREGROUND.top, '#4a2f1d', '#2c1b0e');
+  // the bar top catches the room's key along its near edge
+  ctx.fillStyle = 'rgba(255,214,150,0.26)';
+  ctx.fillRect(L, FOREGROUND.top, W, 3);
   ctx.strokeStyle = 'rgba(0,0,0,0.32)';
   ctx.lineWidth = 3;
   for (let x = L + 24; x < R; x += 168) {
     ctx.strokeRect(x, FOREGROUND.top + 14, 150, 60);
   }
-  // niches of produce either side of the plaque
-  for (const [nx, items] of [[186, ['tomato', '#c9402f']], [1094, ['bread', '#c98a4b']]]) {
-    fillRound(ctx, nx - 62, FOREGROUND.top + 12, 124, 66, 6, '#20130a');
-    ctx.fillStyle = 'rgba(255,206,132,0.16)';
-    ctx.fillRect(nx - 58, FOREGROUND.top + 16, 116, 8);
-    for (let i = 0; i < 4; i += 1) {
-      ctx.fillStyle = items[1];
-      ctx.beginPath();
-      ctx.arc(nx - 42 + i * 28, FOREGROUND.top + 58 - (i % 2) * 6, 11, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = 'rgba(255,255,255,0.3)';
-      ctx.beginPath();
-      ctx.arc(nx - 46 + i * 28, FOREGROUND.top + 53 - (i % 2) * 6, 4, 0, Math.PI * 2);
-      ctx.fill();
-    }
+
+  // an alcove: a recess with its own lamp over it and a shelf along the bottom
+  const alcove = (nx) => {
+    fillRound(ctx, nx - 62, FOREGROUND.top + 12, 124, 66, 6, '#1d1108');
+    const glow = ctx.createRadialGradient(nx, FOREGROUND.top + 14, 3, nx, FOREGROUND.top + 44, 84);
+    glow.addColorStop(0, 'rgba(255,208,136,0.4)');
+    glow.addColorStop(0.5, 'rgba(255,200,126,0.14)');
+    glow.addColorStop(1, 'rgba(255,200,126,0)');
+    fillRound(ctx, nx - 60, FOREGROUND.top + 14, 120, 62, 5, glow);
     ctx.fillStyle = '#7a4f28';
-    ctx.fillRect(nx - 62, FOREGROUND.top + 76, 124, 6);
+    ctx.fillRect(nx - 62, FOREGROUND.top + 70, 124, 8);
+    ctx.fillStyle = 'rgba(255,214,150,0.3)';
+    ctx.fillRect(nx - 62, FOREGROUND.top + 70, 124, 2);
+  };
+
+  // the left alcove: two bottles of the house red and the glass that was with them
+  alcove(186);
+  for (const [bx, lift] of [[158, 0], [178, 3]]) {
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.beginPath();
+    ctx.ellipse(bx + 2, FOREGROUND.top + 70, 13, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    fillRound(ctx, bx - 8, FOREGROUND.top + 40 - lift, 16, 30 + lift, 3, '#2c4a33');
+    ctx.fillStyle = 'rgba(146,196,150,0.5)';
+    ctx.fillRect(bx - 6, FOREGROUND.top + 42 - lift, 3, 26 + lift);
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.fillRect(bx + 4, FOREGROUND.top + 42 - lift, 3, 26 + lift);
+    // the shoulder and the neck, then the cork
+    ctx.fillStyle = '#2c4a33';
+    ctx.beginPath();
+    ctx.moveTo(bx - 8, FOREGROUND.top + 40 - lift);
+    ctx.lineTo(bx - 3, FOREGROUND.top + 26 - lift);
+    ctx.lineTo(bx + 3, FOREGROUND.top + 26 - lift);
+    ctx.lineTo(bx + 8, FOREGROUND.top + 40 - lift);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillRect(bx - 3, FOREGROUND.top + 18 - lift, 6, 9);
+    ctx.fillStyle = '#c9a45c';
+    ctx.fillRect(bx - 4, FOREGROUND.top + 15 - lift, 8, 4);
+    // the label, cream with two rules of type
+    ctx.fillStyle = '#efdfbe';
+    ctx.fillRect(bx - 6, FOREGROUND.top + 48 - lift, 12, 14);
+    ctx.fillStyle = 'rgba(120,72,36,0.7)';
+    ctx.fillRect(bx - 4, FOREGROUND.top + 52 - lift, 8, 1.6);
+    ctx.fillRect(bx - 4, FOREGROUND.top + 56 - lift, 6, 1.4);
   }
+  // a wine glass, upside down on the shelf
+  ctx.fillStyle = 'rgba(236,246,240,0.5)';
+  ctx.beginPath();
+  ctx.moveTo(200, FOREGROUND.top + 40);
+  ctx.quadraticCurveTo(204, FOREGROUND.top + 58, 200, FOREGROUND.top + 66);
+  ctx.quadraticCurveTo(196, FOREGROUND.top + 58, 200, FOREGROUND.top + 40);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.moveTo(200, FOREGROUND.top + 40);
+  ctx.quadraticCurveTo(204, FOREGROUND.top + 58, 200, FOREGROUND.top + 66);
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(236,246,240,0.42)';
+  ctx.fillRect(199, FOREGROUND.top + 38, 2, 4);
+  ctx.fillStyle = 'rgba(236,246,240,0.5)';
+  ctx.beginPath();
+  ctx.ellipse(200, FOREGROUND.top + 69, 7, 2, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // the right alcove: the bread basket, three rolls proud of the rim
+  alcove(1094);
+  ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  ctx.beginPath();
+  ctx.ellipse(1096, FOREGROUND.top + 71, 40, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  for (const [rx, ry, r] of [[1076, 44, 12], [1098, 38, 13], [1118, 45, 11]]) {
+    ctx.fillStyle = '#c98a45';
+    ctx.beginPath();
+    ctx.ellipse(rx, FOREGROUND.top + ry, r, r * 0.78, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#e6b070';
+    ctx.beginPath();
+    ctx.ellipse(rx - r * 0.2, FOREGROUND.top + ry - r * 0.25, r * 0.62, r * 0.42, -0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(140,86,38,0.75)';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(rx - r * 0.5, FOREGROUND.top + ry + 1);
+    ctx.quadraticCurveTo(rx, FOREGROUND.top + ry - 3, rx + r * 0.5, FOREGROUND.top + ry + 1);
+    ctx.stroke();
+  }
+  // the basket itself, in front of the rolls
+  fillRound(ctx, 1056, FOREGROUND.top + 50, 76, 22, 4, '#8a5c33');
+  ctx.fillStyle = 'rgba(52,32,14,0.35)';
+  for (let i = 0; i < 7; i += 1) ctx.fillRect(1058 + i * 10, FOREGROUND.top + 52, 3, 18);
+  ctx.fillStyle = 'rgba(255,214,150,0.3)';
+  ctx.fillRect(1056, FOREGROUND.top + 50, 76, 3);
+
   const px = FIELD.width / 2;
   fillRound(ctx, px - 138, FOREGROUND.top + 20, 276, 42, 6, '#2a1a0e');
   ctx.strokeStyle = PALETTE.brass;
@@ -797,7 +886,7 @@ export function drawRoom(ctx, t) {
   // a soft vignette so the eye stays on the counters
   const vignette = ctx.createRadialGradient(FIELD.width / 2, 440, 340, FIELD.width / 2, 440, 860);
   vignette.addColorStop(0, 'rgba(0,0,0,0)');
-  vignette.addColorStop(1, 'rgba(0,0,0,0.46)');
+  vignette.addColorStop(1, 'rgba(0,0,0,0.36)');
   ctx.fillStyle = vignette;
   ctx.fillRect(L, WALL.top - 200, W, BOTTOM - WALL.top + 200);
 }

@@ -114,7 +114,7 @@ export function drawPass(ctx, pass, t) {
   ctx.textAlign = 'right';
   ctx.font = `600 10px ${FONT}`;
   ctx.fillStyle = 'rgba(242,192,105,0.7)';
-  ctx.fillText('PLATES OUT', box.x + box.w - 12, box.y - 10);
+  ctx.fillText('PLATES OUT', box.x + box.w - 92, box.y - 10);
 
   // every plate waiting under the lamp, newest nearest the middle
   const shelfY = box.y + box.h - 12;

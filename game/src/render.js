@@ -31,7 +31,7 @@ function drawHint(ctx, world) {
   const station = world.lastStation && world.lastStation.kind !== 'pass' ? world.lastStation : world.lastStation;
   const hint = actionHint(station, world.chef);
   if (!hint) return;
-  const y = station.kind === 'crate' || station.kind === 'board' || station.kind === 'plate' || station.kind === 'bin' ? 500 : 392;
+  const y = station.kind === 'crate' || station.kind === 'board' || station.kind === 'plate' || station.kind === 'bin' ? 468 : 398;
   ctx.font = `700 13px ${FONT}`;
   const width = ctx.measureText(hint).width + 22;
   const x = Math.min(FIELD.width - width - 8, Math.max(8, station.x - width / 2));
@@ -61,7 +61,7 @@ function drawToasts(ctx, world) {
     ctx.font = `700 18px ${FONT}`;
     ctx.fillStyle = item.color;
     ctx.textAlign = 'center';
-    ctx.fillText(item.text, FIELD.width / 2, 214 + item.y + index * 24);
+    ctx.fillText(item.text, FIELD.width / 2, 250 + item.y + index * 24);
     ctx.restore();
     index += 1;
   }

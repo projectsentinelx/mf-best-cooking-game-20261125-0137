@@ -1,28 +1,70 @@
 // Every ingredient drawn twice over — as it comes from the crate and as it leaves the board or the
-// pan — plus the plate that holds them. Shapes are built from arcs and paths so the food stays sharp
-// at any size: on the counter, on a ticket the size of a stamp, and heaped on a plate.
+// pan — plus the plate that holds them. Each one is built from layered arcs: a shadow under it, a
+// shaded body, a warm highlight on the lit side and a garnish stroke on top, so a tomato still reads
+// as a tomato on a ticket the size of a stamp and looks worth serving heaped on a plate.
 import { INGREDIENTS } from './pantry.js';
 
+/** A soft contact shadow so nothing floats on the counter. */
+function shadow(ctx, x, y, rx, ry, alpha = 0.3) {
+  ctx.fillStyle = `rgba(0,0,0,${alpha})`;
+  ctx.beginPath();
+  ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+/** The lit side: one pale blob, high and to the left. */
+function gloss(ctx, x, y, rx, ry, rot = -0.5, alpha = 0.5) {
+  ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+  ctx.beginPath();
+  ctx.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+/** A darker crescent along the bottom of a round body, clipped to it. */
+function underShade(ctx, x, y, r, color) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.ellipse(x + r * 0.2, y + r * 0.55, r * 1.05, r * 0.7, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+// The cut pieces every chopped ingredient is scattered from: a fixed handful, so a board of chopped
+// tomato looks the same on every frame and on every ticket.
 const CHOP_BITS = [
   [-0.34, -0.2, 0.3], [-0.02, -0.34, 0.26], [0.3, -0.16, 0.28],
   [-0.2, 0.18, 0.27], [0.12, 0.24, 0.3], [0.38, 0.2, 0.22],
 ];
 
-function bits(ctx, x, y, s, fill, edge) {
+function cubes(ctx, x, y, s, fill, edge, inner) {
   for (const [bx, by, br] of CHOP_BITS) {
-    ctx.fillStyle = fill;
-    ctx.strokeStyle = edge;
-    ctx.lineWidth = Math.max(1, s * 0.04);
     const px = x + bx * s;
     const py = y + by * s;
-    const r = br * s * 0.5;
+    const r = br * s * 0.52;
+    ctx.fillStyle = fill;
     ctx.beginPath();
     ctx.moveTo(px - r, py - r * 0.7);
-    ctx.lineTo(px + r * 0.8, py - r);
+    ctx.lineTo(px + r * 0.82, py - r);
     ctx.lineTo(px + r, py + r * 0.7);
     ctx.lineTo(px - r * 0.7, py + r);
     ctx.closePath();
     ctx.fill();
+    if (inner) {
+      ctx.fillStyle = inner;
+      ctx.beginPath();
+      ctx.moveTo(px - r * 0.5, py - r * 0.36);
+      ctx.lineTo(px + r * 0.3, py - r * 0.5);
+      ctx.lineTo(px + r * 0.36, py + r * 0.22);
+      ctx.lineTo(px - r * 0.3, py + r * 0.36);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.strokeStyle = edge;
+    ctx.lineWidth = Math.max(0.8, s * 0.035);
     ctx.stroke();
   }
 }
@@ -30,125 +72,166 @@ function bits(ctx, x, y, s, fill, edge) {
 function tomato(ctx, x, y, s, state) {
   const c = INGREDIENTS.tomato;
   if (state === 'chopped') {
-    bits(ctx, x, y, s * 1.1, c.flesh, '#8d2a21');
+    cubes(ctx, x, y, s * 1.15, c.flesh, '#8d2a21', '#e8604f');
     ctx.fillStyle = c.seed;
-    for (const [bx, by] of [[-0.1, -0.05], [0.18, 0.1], [-0.24, 0.16]]) {
+    for (const [bx, by] of [[-0.1, -0.05], [0.18, 0.1], [-0.24, 0.16], [0.02, 0.34]]) {
       ctx.beginPath();
-      ctx.arc(x + bx * s, y + by * s, s * 0.035, 0, Math.PI * 2);
+      ctx.arc(x + bx * s, y + by * s, s * 0.04, 0, Math.PI * 2);
       ctx.fill();
     }
     return;
   }
+  const r = s * 0.45;
+  shadow(ctx, x, y + r * 0.8, r * 0.9, r * 0.3, 0.32);
   ctx.fillStyle = c.flesh;
   ctx.beginPath();
-  ctx.arc(x, y, s * 0.44, 0, Math.PI * 2);
+  ctx.arc(x, y, r, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = c.accent;
-  ctx.beginPath();
-  ctx.arc(x - s * 0.12, y - s * 0.13, s * 0.16, 0, Math.PI * 2);
-  ctx.fill();
+  underShade(ctx, x, y, r, 'rgba(120,22,16,0.5)');
+  gloss(ctx, x - r * 0.34, y - r * 0.38, r * 0.28, r * 0.17, -0.6, 0.55);
   ctx.strokeStyle = '#2f6b2c';
-  ctx.lineWidth = s * 0.1;
+  ctx.lineWidth = Math.max(1.4, s * 0.05);
+  ctx.lineCap = 'round';
+  for (let i = 0; i < 5; i += 1) {
+    const a = -Math.PI / 2 + (i - 2) * 0.42;
+    ctx.beginPath();
+    ctx.moveTo(x + Math.cos(a) * r * 0.1, y + Math.sin(a) * r * 0.1 - r * 0.72);
+    ctx.lineTo(x + Math.cos(a) * r * 0.62, y + Math.sin(a) * r * 0.62 - r * 0.5);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = '#3f7a34';
+  ctx.lineWidth = Math.max(1.6, s * 0.06);
   ctx.beginPath();
-  ctx.moveTo(x - s * 0.2, y - s * 0.42);
-  ctx.lineTo(x + s * 0.16, y - s * 0.46);
-  ctx.moveTo(x, y - s * 0.44);
-  ctx.lineTo(x - s * 0.06, y - s * 0.62);
+  ctx.moveTo(x, y - r * 0.85);
+  ctx.lineTo(x + s * 0.02, y - r * 1.28);
   ctx.stroke();
+  ctx.lineCap = 'butt';
 }
 
 function dough(ctx, x, y, s, state) {
   const c = INGREDIENTS.dough;
-  ctx.fillStyle = state === 'seared' ? '#d9a15c' : c.flesh;
+  const rx = s * 0.47;
+  const ry = s * 0.36;
+  const seared = state === 'seared';
+  shadow(ctx, x, y + ry * 0.85, rx * 0.95, ry * 0.3, 0.3);
+  ctx.fillStyle = seared ? '#c98a42' : c.flesh;
   ctx.beginPath();
-  ctx.ellipse(x, y, s * 0.46, s * 0.36, 0, 0, Math.PI * 2);
+  ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
   ctx.fill();
-  if (state === 'seared') {
-    ctx.fillStyle = '#8d5a2c';
-    for (const [bx, by, br] of [[-0.18, -0.1, 0.09], [0.14, 0.08, 0.07], [0.02, -0.18, 0.05]]) {
+  ctx.fillStyle = seared ? '#e2ae66' : c.accent;
+  ctx.beginPath();
+  ctx.ellipse(x - s * 0.03, y - s * 0.06, rx * 0.82, ry * 0.74, 0, 0, Math.PI * 2);
+  ctx.fill();
+  if (seared) {
+    ctx.fillStyle = 'rgba(96,54,22,0.6)';
+    for (const [bx, by, br] of [[-0.2, -0.1, 0.11], [0.14, 0.1, 0.09], [0.02, -0.2, 0.06], [0.24, -0.12, 0.05]]) {
       ctx.beginPath();
       ctx.arc(x + bx * s, y + by * s, br * s, 0, Math.PI * 2);
       ctx.fill();
     }
-    ctx.strokeStyle = '#f0cf96';
-    ctx.lineWidth = s * 0.04;
+    ctx.strokeStyle = 'rgba(255,226,170,0.75)';
+    ctx.lineWidth = Math.max(1, s * 0.04);
     ctx.beginPath();
-    ctx.ellipse(x, y, s * 0.36, s * 0.27, 0, 0, Math.PI * 2);
+    ctx.ellipse(x, y - s * 0.04, rx * 0.5, ry * 0.42, 0, 0, Math.PI * 2);
     ctx.stroke();
   } else {
-    ctx.fillStyle = c.accent;
-    ctx.beginPath();
-    ctx.ellipse(x - s * 0.12, y - s * 0.1, s * 0.2, s * 0.13, -0.4, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fillStyle = 'rgba(255,250,238,0.6)';
+    for (const [bx, by, br] of [[-0.24, 0.06, 0.04], [0.1, -0.14, 0.035], [0.22, 0.12, 0.03]]) {
+      ctx.beginPath();
+      ctx.arc(x + bx * s, y + by * s, br * s, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
+  gloss(ctx, x - rx * 0.42, y - ry * 0.44, rx * 0.24, ry * 0.18, -0.5, seared ? 0.3 : 0.45);
 }
 
 function egg(ctx, x, y, s, state) {
   const c = INGREDIENTS.egg;
   if (state === 'seared') {
-    ctx.fillStyle = '#f0c94b';
+    shadow(ctx, x, y + s * 0.18, s * 0.44, s * 0.16, 0.28);
+    ctx.fillStyle = '#fdf8ec';
     ctx.beginPath();
-    ctx.moveTo(x - s * 0.46, y + s * 0.22);
-    ctx.quadraticCurveTo(x - s * 0.5, y - s * 0.3, x - s * 0.02, y - s * 0.34);
-    ctx.quadraticCurveTo(x + s * 0.5, y - s * 0.34, x + s * 0.46, y + s * 0.14);
-    ctx.quadraticCurveTo(x + s * 0.1, y + s * 0.44, x - s * 0.46, y + s * 0.22);
+    ctx.moveTo(x - s * 0.5, y + s * 0.16);
+    ctx.quadraticCurveTo(x - s * 0.56, y - s * 0.34, x - s * 0.04, y - s * 0.38);
+    ctx.quadraticCurveTo(x + s * 0.54, y - s * 0.38, x + s * 0.5, y + s * 0.1);
+    ctx.quadraticCurveTo(x + s * 0.14, y + s * 0.46, x - s * 0.5, y + s * 0.16);
     ctx.closePath();
     ctx.fill();
-    ctx.strokeStyle = '#c99a29';
-    ctx.lineWidth = s * 0.05;
+    ctx.strokeStyle = '#d8a24c';
+    ctx.lineWidth = Math.max(1.2, s * 0.055);
     ctx.stroke();
-    ctx.fillStyle = '#5f8f42';
+    ctx.fillStyle = '#f7b528';
     ctx.beginPath();
-    ctx.arc(x + s * 0.06, y - s * 0.04, s * 0.06, 0, Math.PI * 2);
-    ctx.arc(x - s * 0.16, y + s * 0.1, s * 0.045, 0, Math.PI * 2);
+    ctx.arc(x + s * 0.02, y - s * 0.02, s * 0.19, 0, Math.PI * 2);
     ctx.fill();
+    ctx.fillStyle = '#ffd75e';
+    ctx.beginPath();
+    ctx.arc(x - s * 0.03, y - s * 0.08, s * 0.12, 0, Math.PI * 2);
+    ctx.fill();
+    gloss(ctx, x - s * 0.07, y - s * 0.12, s * 0.05, s * 0.03, -0.6, 0.8);
+    ctx.fillStyle = '#5f8f42';
+    for (const [bx, by] of [[0.24, 0.02], [-0.2, 0.12], [0.1, 0.24]]) {
+      ctx.beginPath();
+      ctx.arc(x + bx * s, y + by * s, s * 0.032, 0, Math.PI * 2);
+      ctx.fill();
+    }
     return;
   }
+  shadow(ctx, x, y + s * 0.16, s * 0.42, s * 0.15, 0.3);
   ctx.fillStyle = '#fdf8ec';
   ctx.beginPath();
-  ctx.ellipse(x, y, s * 0.4, s * 0.32, 0.2, 0, Math.PI * 2);
+  ctx.ellipse(x, y, s * 0.42, s * 0.33, 0.15, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(214,200,178,0.6)';
+  ctx.beginPath();
+  ctx.ellipse(x + s * 0.05, y + s * 0.14, s * 0.34, s * 0.14, 0.15, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = c.seed;
   ctx.beginPath();
-  ctx.arc(x + s * 0.06, y - s * 0.02, s * 0.17, 0, Math.PI * 2);
+  ctx.arc(x, y - s * 0.02, s * 0.18, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = '#ffe9a8';
+  ctx.fillStyle = '#ffbf3f';
   ctx.beginPath();
-  ctx.arc(x + s * 0.02, y - s * 0.07, s * 0.06, 0, Math.PI * 2);
+  ctx.arc(x - s * 0.02, y - s * 0.06, s * 0.12, 0, Math.PI * 2);
   ctx.fill();
+  gloss(ctx, x - s * 0.07, y - s * 0.1, s * 0.05, s * 0.03, -0.6, 0.9);
 }
 
 function herb(ctx, x, y, s, state) {
   const c = INGREDIENTS.herb;
   if (state === 'chopped') {
-    ctx.fillStyle = c.flesh;
-    for (const [bx, by, br, rot] of [[-0.26, 0.06, 0.1, 0.4], [0.02, -0.14, 0.09, -0.6], [0.24, 0.12, 0.08, 1.1], [-0.02, 0.2, 0.07, 0.2], [0.3, -0.22, 0.06, 0.9]]) {
+    for (const [bx, by, br, rot] of [[-0.28, 0.08, 0.11, 0.4], [0.0, -0.16, 0.1, -0.6], [0.26, 0.12, 0.09, 1.1], [-0.02, 0.22, 0.08, 0.2], [0.32, -0.2, 0.07, 0.9], [0.14, 0.0, 0.06, -0.3]]) {
       ctx.save();
       ctx.translate(x + bx * s, y + by * s);
       ctx.rotate(rot);
+      ctx.fillStyle = c.flesh;
       ctx.beginPath();
-      ctx.ellipse(0, 0, br * s, br * s * 0.45, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, br * s, br * s * 0.42, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = c.accent;
+      ctx.beginPath();
+      ctx.ellipse(-br * s * 0.2, -br * s * 0.14, br * s * 0.5, br * s * 0.16, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
     return;
   }
-  ctx.strokeStyle = c.accent;
-  ctx.lineWidth = s * 0.06;
+  ctx.strokeStyle = c.seed;
+  ctx.lineWidth = Math.max(1.4, s * 0.075);
   ctx.beginPath();
-  ctx.moveTo(x - s * 0.32, y + s * 0.3);
-  ctx.quadraticCurveTo(x, y + s * 0.02, x + s * 0.3, y - s * 0.3);
+  ctx.moveTo(x - s * 0.36, y + s * 0.34);
+  ctx.quadraticCurveTo(x, y + s * 0.02, x + s * 0.34, y - s * 0.34);
   ctx.stroke();
-  ctx.fillStyle = c.flesh;
-  for (let i = 0; i < 5; i += 1) {
-    const t = i / 4;
-    const px = x - s * 0.24 + t * s * 0.52;
-    const py = y + s * 0.24 - t * s * 0.5;
+  for (let i = 0; i < 6; i += 1) {
+    const t = i / 5;
+    const px = x - s * 0.3 + t * s * 0.6;
+    const py = y + s * 0.28 - t * s * 0.56;
     ctx.save();
     ctx.translate(px, py);
-    ctx.rotate(i % 2 === 0 ? -0.7 : 0.7);
+    ctx.rotate(i % 2 === 0 ? -0.85 : 0.5);
+    ctx.fillStyle = i % 2 === 0 ? c.flesh : '#5f8f4a';
     ctx.beginPath();
-    ctx.ellipse(0, 0, s * 0.13, s * 0.07, 0, 0, Math.PI * 2);
+    ctx.ellipse(s * 0.1, 0, s * 0.15, s * 0.075, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
@@ -157,57 +240,86 @@ function herb(ctx, x, y, s, state) {
 function mushroom(ctx, x, y, s, state) {
   const c = INGREDIENTS.mushroom;
   if (state === 'seared') {
-    for (const [bx, by, rot] of [[-0.2, 0.1, -0.5], [0.12, -0.06, 0.3], [0.2, 0.22, 0.9]]) {
+    for (const [bx, by, rot] of [[-0.22, 0.1, -0.5], [0.14, -0.06, 0.3], [0.22, 0.24, 0.9]]) {
       ctx.save();
       ctx.translate(x + bx * s, y + by * s);
       ctx.rotate(rot);
+      shadow(ctx, 0, s * 0.09, s * 0.28, s * 0.09, 0.25);
       ctx.fillStyle = c.flesh;
       ctx.beginPath();
-      ctx.ellipse(0, 0, s * 0.26, s * 0.12, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, s * 0.28, s * 0.13, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.strokeStyle = c.seed;
-      ctx.lineWidth = s * 0.05;
+      ctx.lineWidth = Math.max(1, s * 0.045);
       ctx.beginPath();
-      ctx.ellipse(0, 0, s * 0.2, s * 0.08, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, s * 0.21, s * 0.085, 0, 0, Math.PI * 2);
       ctx.stroke();
+      ctx.fillStyle = 'rgba(96,54,22,0.45)';
+      ctx.beginPath();
+      ctx.ellipse(0, -s * 0.04, s * 0.16, s * 0.05, 0, 0, Math.PI * 2);
+      ctx.fill();
       ctx.restore();
     }
     return;
   }
+  shadow(ctx, x, y + s * 0.3, s * 0.3, s * 0.1, 0.3);
+  ctx.fillStyle = '#efe0c4';
+  ctx.beginPath();
+  ctx.moveTo(x - s * 0.09, y + s * 0.02);
+  ctx.lineTo(x + s * 0.09, y + s * 0.02);
+  ctx.lineTo(x + s * 0.07, y + s * 0.3);
+  ctx.lineTo(x - s * 0.07, y + s * 0.3);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = 'rgba(150,124,92,0.5)';
+  ctx.fillRect(x + s * 0.01, y + s * 0.02, s * 0.08, s * 0.28);
   ctx.fillStyle = c.seed;
-  ctx.fillRect(x - s * 0.07, y, s * 0.14, s * 0.26);
+  ctx.beginPath();
+  ctx.ellipse(x, y, s * 0.38, s * 0.3, 0, 0, Math.PI * 2);
+  ctx.fill();
   ctx.fillStyle = c.flesh;
   ctx.beginPath();
-  ctx.ellipse(x, y - s * 0.02, s * 0.36, s * 0.25, 0, Math.PI, Math.PI * 2);
+  ctx.ellipse(x, y - s * 0.03, s * 0.36, s * 0.28, 0, Math.PI, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = c.accent;
   ctx.beginPath();
-  ctx.ellipse(x - s * 0.1, y - s * 0.12, s * 0.1, s * 0.05, -0.4, 0, Math.PI * 2);
+  ctx.ellipse(x - s * 0.1, y - s * 0.12, s * 0.12, s * 0.06, -0.35, 0, Math.PI * 2);
   ctx.fill();
+  gloss(ctx, x - s * 0.15, y - s * 0.16, s * 0.06, s * 0.035, -0.4, 0.6);
 }
 
 function cheese(ctx, x, y, s, state) {
   const c = INGREDIENTS.cheese;
   if (state === 'chopped') {
-    bits(ctx, x, y, s * 1.05, c.flesh, '#a9781f');
+    cubes(ctx, x, y, s * 1.1, c.flesh, '#a9781f', c.accent);
     return;
   }
+  shadow(ctx, x, y + s * 0.27, s * 0.4, s * 0.13, 0.3);
   ctx.fillStyle = c.flesh;
   ctx.beginPath();
-  ctx.moveTo(x - s * 0.38, y + s * 0.28);
-  ctx.lineTo(x + s * 0.36, y + s * 0.18);
-  ctx.lineTo(x + s * 0.24, y - s * 0.3);
+  ctx.moveTo(x - s * 0.4, y + s * 0.26);
+  ctx.lineTo(x + s * 0.38, y + s * 0.16);
+  ctx.lineTo(x + s * 0.24, y - s * 0.32);
   ctx.closePath();
   ctx.fill();
   ctx.fillStyle = c.accent;
   ctx.beginPath();
-  ctx.moveTo(x - s * 0.38, y + s * 0.28);
-  ctx.lineTo(x + s * 0.36, y + s * 0.18);
-  ctx.lineTo(x + s * 0.28, y + s * 0.06);
+  ctx.moveTo(x - s * 0.4, y + s * 0.26);
+  ctx.lineTo(x + s * 0.38, y + s * 0.16);
+  ctx.lineTo(x + s * 0.3, y + s * 0.02);
+  ctx.lineTo(x - s * 0.34, y + s * 0.1);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#b8842a';
+  ctx.beginPath();
+  ctx.moveTo(x - s * 0.4, y + s * 0.26);
+  ctx.lineTo(x + s * 0.38, y + s * 0.16);
+  ctx.lineTo(x + s * 0.37, y + s * 0.22);
+  ctx.lineTo(x - s * 0.39, y + s * 0.32);
   ctx.closePath();
   ctx.fill();
   ctx.fillStyle = '#c48f24';
-  for (const [bx, by, br] of [[-0.05, 0.04, 0.07], [0.14, 0.08, 0.045]]) {
+  for (const [bx, by, br] of [[-0.08, 0.02, 0.075], [0.16, 0.06, 0.05], [-0.22, 0.1, 0.04]]) {
     ctx.beginPath();
     ctx.arc(x + bx * s, y + by * s, br * s, 0, Math.PI * 2);
     ctx.fill();
@@ -216,48 +328,78 @@ function cheese(ctx, x, y, s, state) {
 
 function bread(ctx, x, y, s, state) {
   const c = INGREDIENTS.bread;
-  ctx.fillStyle = state === 'seared' ? '#c27f3f' : c.flesh;
+  const seared = state === 'seared';
+  const rx = s * 0.44;
+  const ry = s * 0.34;
+  shadow(ctx, x, y + ry * 0.85, rx * 0.92, ry * 0.28, 0.3);
+  ctx.fillStyle = seared ? '#a9622c' : c.flesh;
   ctx.beginPath();
-  ctx.ellipse(x, y, s * 0.42, s * 0.32, 0, 0, Math.PI * 2);
+  ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = state === 'seared' ? '#e8c186' : c.accent;
+  ctx.fillStyle = seared ? '#ddb478' : c.accent;
   ctx.beginPath();
-  ctx.ellipse(x, y, s * 0.33, s * 0.24, 0, 0, Math.PI * 2);
+  ctx.ellipse(x, y - s * 0.02, rx * 0.78, ry * 0.72, 0, 0, Math.PI * 2);
   ctx.fill();
-  if (state === 'seared') {
-    ctx.strokeStyle = '#7a4a20';
-    ctx.lineWidth = s * 0.05;
-    for (let i = -1; i <= 1; i += 1) {
-      ctx.beginPath();
-      ctx.moveTo(x + i * s * 0.13 - s * 0.05, y - s * 0.2);
-      ctx.lineTo(x + i * s * 0.13 + s * 0.05, y + s * 0.2);
-      ctx.stroke();
-    }
-  }
-}
-
-function broth(ctx, x, y, s, state) {
-  const c = INGREDIENTS.broth;
-  ctx.fillStyle = '#3b2a1c';
-  ctx.beginPath();
-  ctx.arc(x, y, s * 0.4, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = state === 'seared' ? '#e0a95c' : '#7d5c33';
-  ctx.beginPath();
-  ctx.arc(x, y - s * 0.03, s * 0.29, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = c.accent;
-  ctx.lineWidth = s * 0.05;
-  ctx.beginPath();
-  ctx.arc(x, y - s * 0.05, s * 0.16, 0.4, 2.4);
-  ctx.stroke();
-  if (state === 'seared') {
-    ctx.fillStyle = 'rgba(255,250,238,0.7)';
-    for (const [bx, by, br] of [[-0.14, -0.18, 0.05], [0.08, -0.24, 0.04]]) {
+  if (seared) {
+    ctx.fillStyle = 'rgba(110,58,20,0.55)';
+    for (const [bx, by, br] of [[-0.2, -0.1, 0.09], [0.16, 0.12, 0.07]]) {
       ctx.beginPath();
       ctx.arc(x + bx * s, y + by * s, br * s, 0, Math.PI * 2);
       ctx.fill();
     }
+    ctx.strokeStyle = '#7a4a20';
+    ctx.lineWidth = Math.max(1, s * 0.05);
+    for (let i = -1; i <= 1; i += 1) {
+      ctx.beginPath();
+      ctx.moveTo(x + i * s * 0.14 - s * 0.05, y - s * 0.2);
+      ctx.lineTo(x + i * s * 0.14 + s * 0.05, y + s * 0.2);
+      ctx.stroke();
+    }
+  }
+  gloss(ctx, x - rx * 0.4, y - ry * 0.4, rx * 0.24, ry * 0.16, -0.5, 0.4);
+}
+
+function broth(ctx, x, y, s, state) {
+  const c = INGREDIENTS.broth;
+  const seared = state === 'seared';
+  shadow(ctx, x, y + s * 0.28, s * 0.36, s * 0.12, 0.3);
+  ctx.fillStyle = '#3b2a1c';
+  ctx.beginPath();
+  ctx.ellipse(x, y + s * 0.02, s * 0.4, s * 0.34, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#5d4630';
+  ctx.beginPath();
+  ctx.ellipse(x, y - s * 0.02, s * 0.36, s * 0.3, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = seared ? '#e8ab55' : '#835f34';
+  ctx.beginPath();
+  ctx.ellipse(x, y - s * 0.03, s * 0.3, s * 0.25, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = c.accent;
+  ctx.lineWidth = Math.max(1, s * 0.05);
+  ctx.beginPath();
+  ctx.ellipse(x, y - s * 0.05, s * 0.17, s * 0.13, 0.3, 0.4, 2.6);
+  ctx.stroke();
+  if (seared) {
+    ctx.fillStyle = 'rgba(255,250,238,0.8)';
+    for (const [bx, by, br] of [[-0.14, -0.16, 0.055], [0.09, -0.22, 0.04], [0.16, -0.06, 0.035]]) {
+      ctx.beginPath();
+      ctx.arc(x + bx * s, y + by * s, br * s, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.strokeStyle = 'rgba(255,246,232,0.5)';
+    ctx.lineWidth = Math.max(1.2, s * 0.05);
+    for (let i = 0; i < 2; i += 1) {
+      ctx.beginPath();
+      ctx.moveTo(x - s * 0.12 + i * s * 0.2, y - s * 0.3);
+      ctx.quadraticCurveTo(x - s * 0.18 + i * s * 0.2, y - s * 0.44, x - s * 0.1 + i * s * 0.2, y - s * 0.56);
+      ctx.stroke();
+    }
+  } else {
+    ctx.fillStyle = 'rgba(255,255,255,0.22)';
+    ctx.beginPath();
+    ctx.ellipse(x - s * 0.1, y - s * 0.1, s * 0.1, s * 0.05, -0.4, 0, Math.PI * 2);
+    ctx.fill();
   }
 }
 
@@ -272,14 +414,18 @@ export function drawIngredient(ctx, ingredientId, state, x, y, size) {
   if (!drawer) return;
   if (state === 'burnt') {
     ctx.save();
-    ctx.globalAlpha = 0.85;
+    ctx.globalAlpha = 0.9;
     ctx.fillStyle = '#241a14';
     ctx.beginPath();
-    ctx.ellipse(x, y, size * 0.38, size * 0.3, 0.3, 0, Math.PI * 2);
+    ctx.ellipse(x, y, size * 0.4, size * 0.31, 0.3, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = '#3a2a1e';
+    ctx.fillStyle = '#3f2c1e';
     ctx.beginPath();
-    ctx.ellipse(x - size * 0.06, y - size * 0.05, size * 0.2, size * 0.14, 0.3, 0, Math.PI * 2);
+    ctx.ellipse(x - size * 0.06, y - size * 0.05, size * 0.22, size * 0.15, 0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,120,60,0.5)';
+    ctx.beginPath();
+    ctx.arc(x + size * 0.1, y + size * 0.04, size * 0.05, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
     return;
@@ -288,54 +434,85 @@ export function drawIngredient(ctx, ingredientId, state, x, y, size) {
   drawer(ctx, x, y, size, key);
 }
 
-/** The plate itself: a warm rim, a shadow and a well. */
+/** The plate itself: a warm cream rim, a shadowed well and one thin copper line. */
 export function drawPlateBase(ctx, x, y, size) {
+  const rx = size * 0.5;
+  const ry = size * 0.34;
   ctx.save();
-  ctx.fillStyle = 'rgba(0,0,0,0.28)';
+  shadow(ctx, x, y + size * 0.075, rx * 0.98, ry * 0.92, 0.32);
+  const rim = ctx.createLinearGradient(x - rx, y - ry, x + rx, y + ry);
+  rim.addColorStop(0, '#fffaf0');
+  rim.addColorStop(0.55, '#efe7d6');
+  rim.addColorStop(1, '#cfc2ac');
+  ctx.fillStyle = rim;
   ctx.beginPath();
-  ctx.ellipse(x, y + size * 0.07, size * 0.5, size * 0.33, 0, 0, Math.PI * 2);
+  ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = '#f2ece0';
+  const well = ctx.createRadialGradient(x - rx * 0.2, y - ry * 0.3, rx * 0.1, x, y, rx * 0.8);
+  well.addColorStop(0, '#fffdf6');
+  well.addColorStop(1, '#e7dcc8');
+  ctx.fillStyle = well;
   ctx.beginPath();
-  ctx.ellipse(x, y, size * 0.5, size * 0.34, 0, 0, Math.PI * 2);
+  ctx.ellipse(x, y + size * 0.005, rx * 0.79, ry * 0.76, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = '#ddd3c2';
+  ctx.strokeStyle = 'rgba(160,142,116,0.55)';
+  ctx.lineWidth = Math.max(1, size * 0.012);
   ctx.beginPath();
-  ctx.ellipse(x, y, size * 0.42, size * 0.27, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#fbf7ee';
-  ctx.beginPath();
-  ctx.ellipse(x, y - size * 0.01, size * 0.37, size * 0.24, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = '#c9bda8';
-  ctx.lineWidth = Math.max(1, size * 0.008);
-  ctx.beginPath();
-  ctx.ellipse(x, y, size * 0.46, size * 0.3, 0, 0, Math.PI * 2);
+  ctx.ellipse(x, y, rx * 0.79, ry * 0.76, 0, 0, Math.PI * 2);
   ctx.stroke();
+  ctx.strokeStyle = 'rgba(193,116,66,0.5)';
+  ctx.lineWidth = Math.max(1, size * 0.012);
+  ctx.beginPath();
+  ctx.ellipse(x, y, rx * 0.89, ry * 0.88, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  gloss(ctx, x - rx * 0.4, y - ry * 0.55, rx * 0.16, ry * 0.08, -0.35, 0.75);
   ctx.restore();
 }
 
 const LAYOUTS = {
-  1: [[0, 0.02, 1]],
-  2: [[-0.19, 0.01, 0.95], [0.19, -0.03, 0.92]],
-  3: [[-0.21, -0.08, 0.9], [0.2, -0.1, 0.88], [0.0, 0.2, 0.9]],
-  4: [[-0.2, -0.14, 0.82], [0.2, -0.14, 0.82], [-0.14, 0.2, 0.82], [0.14, 0.2, 0.82]],
+  1: [[0, 0.02, 1.0]],
+  2: [[-0.21, 0.03, 0.98], [0.2, -0.02, 0.94]],
+  3: [[-0.23, -0.05, 0.92], [0.22, -0.07, 0.9], [0.0, 0.21, 0.92]],
+  4: [[-0.23, -0.13, 0.84], [0.23, -0.13, 0.84], [-0.15, 0.2, 0.84], [0.15, 0.2, 0.84]],
 };
 
-/** A plate holding whatever components have been laid on it so far, spread so each part reads. */
-export function drawPlate(ctx, parts, x, y, size) {
+/** A smear of sauce in the well, under whatever is laid on it. */
+function sauce(ctx, x, y, size, color) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = size * 0.075;
+  ctx.lineCap = 'round';
+  ctx.globalAlpha = 0.85;
+  ctx.beginPath();
+  ctx.arc(x, y + size * 0.02, size * 0.22, -0.4, 2.3);
+  ctx.stroke();
+  ctx.globalAlpha = 0.5;
+  ctx.lineWidth = size * 0.03;
+  ctx.beginPath();
+  ctx.arc(x + size * 0.03, y - size * 0.02, size * 0.3, 2.6, 5.4);
+  ctx.stroke();
+  ctx.lineCap = 'butt';
+  ctx.restore();
+}
+
+/**
+ * A plate holding whatever components have been laid on it so far, spread so each part reads: the
+ * sauce first, then each finished component in its own corner of the well.
+ */
+export function drawPlate(ctx, parts, x, y, size, sauceColor = '#c2663a') {
   drawPlateBase(ctx, x, y, size);
   const count = Math.min(parts.length, 4);
+  if (count > 0) sauce(ctx, x, y, size, sauceColor);
   const layout = LAYOUTS[count] || [];
   for (let index = 0; index < count; index += 1) {
     const part = parts[index];
     const spot = layout[index];
     const state = part.state === 'burnt' ? 'burnt' : part.done ? (part.method === 'chop' ? 'chopped' : 'seared') : 'raw';
-    drawIngredient(ctx, part.ingredient, state, x + spot[0] * size, y + spot[1] * size, size * 0.42 * spot[2]);
+    drawIngredient(ctx, part.ingredient, state, x + spot[0] * size, y + spot[1] * size, size * 0.56 * spot[2]);
   }
 }
 
-/** A finished dish plated for a ticket or the end card: its parts, then its garnish on top. */
+/** A finished dish plated for a ticket, the pass or the end card: its parts, then its garnish on top. */
 export function drawDish(ctx, recipe, x, y, size) {
   const parts = recipe.parts.map((part, index) => ({
     ingredient: part.ingredient,
@@ -346,5 +523,5 @@ export function drawDish(ctx, recipe, x, y, size) {
   }));
   drawPlate(ctx, parts, x, y, size);
   const garnish = { thyme: 'herb', herb: 'herb', mushroom: 'mushroom', cheese: 'cheese' }[recipe.garnish] || 'herb';
-  drawIngredient(ctx, garnish, garnish === 'herb' ? 'chopped' : 'seared', x + size * 0.06, y - size * 0.12, size * 0.18);
+  drawIngredient(ctx, garnish, garnish === 'herb' ? 'chopped' : 'seared', x + size * 0.04, y - size * 0.14, size * 0.22);
 }

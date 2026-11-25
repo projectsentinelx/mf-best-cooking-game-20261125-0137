@@ -1,12 +1,16 @@
 // What one press of the action key does at each station, and the clocks the stations run on their
 // own: searing advances while the pan is hot, a chop answers a held key or one tap of a knife, and a
-// burnt pan empties itself in smoke. Drawing the station furniture lives at the bottom of the file.
-import { PALETTE, CHOP_SECONDS, SEAR_READY, SEAR_BURN, SEAR_SECONDS } from './config.js';
+// burnt pan empties itself in smoke. The furniture each station draws lives at the bottom of the file
+// and is painted against the bands in config.js, so the pans, the board and the plate line up.
+import { PALETTE, CHOP_SECONDS, SEAR_READY, SEAR_BURN, SEAR_SECONDS, FRONT } from './config.js';
 import { INGREDIENTS, rawItem } from './pantry.js';
 import { drawIngredient, drawPlateBase, drawPlate } from './food.js';
+import { assemblySummary, drawAssemblyBadge, drawPlateInProgress } from './plating.js';
+import { drawPass } from './pass.js';
 import { fillRound, plank, ring } from './paint.js';
 
 const MAX_PARTS = 4;
+const FONT = '"Trebuchet MS", "Segoe UI", Verdana, sans-serif';
 
 /** A fixed-sequence noise source, so sparks and steam fall the same way on every run. */
 let noiseSeed = 0x9e3779b9;
@@ -36,7 +40,7 @@ function note(kitchen, x, y, text, color) {
 
 /**
  * One interaction at the nearest station. Returns what happened so the world can score a serve, ring
- * the bell or buzz a refusal; `ok` false means the chef was told why not.
+ * the bell or buzz a refusal; `ok` false means the cook was told why not.
  */
 export function act(world, station) {
   const { kitchen, chef } = world;
@@ -95,7 +99,7 @@ export function act(world, station) {
       if (station.plate.parts.length >= MAX_PARTS) return { ok: false, note: 'The plate is full' };
       station.plate.parts.push(item);
       chef.carry = null;
-      note(kitchen, station.x, 512, '+ 1', PALETTE.ok);
+      note(kitchen, station.x, 470, '+ 1', PALETTE.ok);
       return { ok: true, note: 'On the plate', sound: 'place' };
     }
     if (chef.carry && chef.carry.kind === 'plate') {
@@ -135,11 +139,11 @@ export function chop(world, amount) {
   if (!item || item.done) return false;
   board.stroke = 1;
   item.progress = Math.min(1, item.progress + amount);
-  spark(kitchen, board.x + (noise() - 0.5) * 48, 566, INGREDIENTS[item.ingredient].flesh);
+  spark(kitchen, board.x + (noise() - 0.5) * 48, board.box.y + 70, INGREDIENTS[item.ingredient].flesh);
   if (item.progress >= 1) {
     item.done = true;
     item.state = 'ready';
-    note(kitchen, board.x, 520, 'Chopped', PALETTE.ok);
+    note(kitchen, board.x, board.box.y - 10, 'Chopped', PALETTE.ok);
     return true;
   }
   return false;
@@ -171,7 +175,7 @@ export function tickStations(kitchen, dt) {
       item.burnTimer = 0;
       note(kitchen, burner.x, 300, 'Burnt!', PALETTE.bad);
     }
-    if (noise() < dt * 4) puff(kitchen, burner.x + (noise() - 0.5) * 36, 324, 4 + noise() * 3, noise() * 6);
+    if (noise() < dt * 4) puff(kitchen, burner.x + (noise() - 0.5) * 40, 320, 4 + noise() * 3, noise() * 6);
   }
 
   for (let i = kitchen.smoke.length - 1; i >= 0; i -= 1) {
@@ -206,151 +210,179 @@ export function tickStations(kitchen, dt) {
 
 // ---------------------------------------------------------------- drawing
 
+/** One pantry crate: a slatted box with its ingredient sitting proud of the rim. */
 function drawCrate(ctx, crate) {
   const { box } = crate;
-  const lift = crate.bob * 3;
+  const lift = crate.bob * 4;
+  const ingredient = INGREDIENTS[crate.ingredient];
   ctx.save();
   ctx.translate(0, -lift);
-  plank(ctx, box.x, box.y, box.w, box.h, '#6b4a2d', '#5a3d24', '#8a6238');
-  ctx.strokeStyle = '#402a17';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(box.x + 1, box.y + 1, box.w - 2, box.h - 2);
-  fillRound(ctx, box.x + 4, box.y + 4, box.w - 8, 26, 4, 'rgba(20,12,6,0.45)');
-  const ingredient = INGREDIENTS[crate.ingredient];
-  drawIngredient(ctx, crate.ingredient, 'raw', box.x + box.w / 2, box.y + 20, 40);
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.fillRect(box.x + 4, box.y + box.h - 4, box.w - 8, 8);
+  plank(ctx, box.x, box.y, box.w, box.h, '#6f4c2e', '#5c3d23', '#96693c');
+  // the dark inside of the crate, so the food reads against it
+  fillRound(ctx, box.x + 5, box.y + 5, box.w - 10, box.h - 26, 3, 'rgba(46,30,16,0.55)');
+  ctx.fillStyle = 'rgba(255,214,150,0.14)';
+  ctx.fillRect(box.x + 5, box.y + 5, box.w - 10, 2);
+  drawIngredient(ctx, crate.ingredient, 'raw', box.x + box.w / 2, box.y + 40, 66);
+  // the painted label board along the bottom
   ctx.fillStyle = ingredient.crate;
-  ctx.fillRect(box.x + 4, box.y + box.h - 16, box.w - 8, 12);
-  ctx.font = '600 10px "Trebuchet MS", sans-serif';
-  ctx.fillStyle = 'rgba(255,246,232,0.92)';
+  ctx.fillRect(box.x + 3, box.y + box.h - 19, box.w - 6, 15);
+  ctx.fillStyle = 'rgba(0,0,0,0.22)';
+  ctx.fillRect(box.x + 3, box.y + box.h - 19, box.w - 6, 2);
+  ctx.font = `700 10px ${FONT}`;
+  ctx.fillStyle = 'rgba(255,248,236,0.96)';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(crate.label, box.x + box.w / 2, box.y + box.h - 10);
   ctx.restore();
 }
 
-function drawBoard(ctx, world, t) {
+/** The chopping board, its knife and whatever is on it. */
+function drawBoard(ctx, world) {
   const { board } = world.kitchen;
   const { box } = board;
-  plank(ctx, box.x, box.y + 14, box.w, box.h - 14, '#b98b52', '#a3763f', '#d3a76a');
-  ctx.fillStyle = '#8a6234';
-  fillRound(ctx, box.x + box.w - 14, box.y + 4, 18, 14, 4, '#8a6234');
+  plank(ctx, box.x, box.y + 20, box.w, box.h - 20, '#c2955c', '#a8783f', '#dcb277');
+  ctx.strokeStyle = 'rgba(90,60,30,0.45)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(box.x + 2, box.y + 22, box.w - 4, box.h - 24);
+  fillRound(ctx, box.x + box.w - 18, box.y + 6, 22, 18, 4, '#8a6234');
+  ctx.font = `700 10px ${FONT}`;
+  ctx.fillStyle = 'rgba(246,231,205,0.62)';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText('CHOP', box.x + 8, box.y + 14);
+
   if (board.item) {
     const item = board.item;
     const state = item.done ? 'chopped' : 'raw';
-    drawIngredient(ctx, item.ingredient, state, box.x + box.w / 2 - 6, box.y + 48, 46);
-    if (!item.done) ring(ctx, box.x + box.w / 2 - 6, box.y + 48, 30, 4, item.progress, PALETTE.ok, 'rgba(0,0,0,0.3)');
-    // The knife comes down on each stroke.
+    const cx = box.x + box.w / 2 - 10;
+    const cy = box.y + 62;
+    drawIngredient(ctx, item.ingredient, state, cx, cy, 58);
+    if (!item.done) ring(ctx, cx, cy, 34, 4, item.progress, PALETTE.ok, 'rgba(0,0,0,0.3)');
     const swing = board.stroke > 0 ? -0.5 + (1 - board.stroke) * 1.1 : -0.85;
     ctx.save();
-    ctx.translate(box.x + box.w / 2 + 24, box.y + 34);
+    ctx.translate(cx + 30, box.y + 40);
     ctx.rotate(swing);
-    ctx.fillStyle = '#dfe4e8';
+    ctx.fillStyle = '#e4e9ed';
     ctx.beginPath();
     ctx.moveTo(0, 0);
-    ctx.lineTo(42, 6);
-    ctx.lineTo(42, 12);
-    ctx.lineTo(0, 14);
+    ctx.lineTo(46, 7);
+    ctx.lineTo(46, 14);
+    ctx.lineTo(0, 16);
     ctx.closePath();
     ctx.fill();
+    ctx.fillStyle = 'rgba(150,170,180,0.5)';
+    ctx.fillRect(6, 10, 38, 3);
     ctx.fillStyle = '#4a3a2a';
-    fillRound(ctx, -20, 2, 22, 9, 4, '#4a3a2a');
+    fillRound(ctx, -22, 2, 24, 10, 4, '#4a3a2a');
     ctx.restore();
   }
-  ctx.font = '600 11px "Trebuchet MS", sans-serif';
-  ctx.fillStyle = 'rgba(246,231,205,0.6)';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'alphabetic';
-  ctx.fillText('CHOP', box.x + box.w / 2, box.y + 10);
 }
 
+/** A copper pan on its flame, the item in it and the clock over the item. */
 function drawBurner(ctx, burner, t) {
   const cx = burner.x;
-  const cy = 338;
-  // flame tongues under the pan
+  const cy = 330;
   for (let i = 0; i < 7; i += 1) {
     const a = -Math.PI + (i * Math.PI) / 6;
     const flicker = 0.7 + 0.3 * Math.sin(t * 9 + i * 1.7 + burner.index);
-    const len = (18 + 8 * flicker) * (0.6 + burner.heat * 0.5) + burner.flare * 14;
+    const len = (22 + 9 * flicker) * (0.6 + burner.heat * 0.5) + burner.flare * 16;
     ctx.fillStyle = i % 2 === 0 ? PALETTE.ember : PALETTE.emberHot;
     ctx.globalAlpha = 0.55 + 0.35 * flicker;
     ctx.beginPath();
-    ctx.moveTo(cx + Math.cos(a) * 40, cy + 20 + Math.sin(a) * 8);
-    ctx.quadraticCurveTo(cx + Math.cos(a) * (40 + len * 0.4), cy + 26 - len * 0.4, cx + Math.cos(a) * (40 + len * 0.2), cy + 18 - len * 0.15);
-    ctx.quadraticCurveTo(cx + Math.cos(a) * (44 + len), cy + 22 - len * 0.2, cx + Math.cos(a) * 42, cy + 18);
+    ctx.moveTo(cx + Math.cos(a) * 46, cy + 24 + Math.sin(a) * 8);
+    ctx.quadraticCurveTo(cx + Math.cos(a) * (46 + len * 0.4), cy + 30 - len * 0.4, cx + Math.cos(a) * (46 + len * 0.2), cy + 22 - len * 0.15);
+    ctx.quadraticCurveTo(cx + Math.cos(a) * (50 + len), cy + 26 - len * 0.2, cx + Math.cos(a) * 48, cy + 22);
     ctx.closePath();
     ctx.fill();
   }
   ctx.globalAlpha = 1;
-  // grate
   ctx.strokeStyle = '#2b2b30';
-  ctx.lineWidth = 5;
+  ctx.lineWidth = 6;
   ctx.beginPath();
-  ctx.arc(cx, cy, 52, 0, Math.PI * 2);
+  ctx.arc(cx, cy, 60, 0, Math.PI * 2);
   ctx.stroke();
   ctx.strokeStyle = '#3c3c44';
   ctx.lineWidth = 2;
   for (let i = -2; i <= 2; i += 1) {
     ctx.beginPath();
-    ctx.moveTo(cx - 46, cy + i * 16);
-    ctx.lineTo(cx + 46, cy + i * 16);
+    ctx.moveTo(cx - 54, cy + i * 18);
+    ctx.lineTo(cx + 54, cy + i * 18);
     ctx.stroke();
   }
-  // copper pan
   const item = burner.item;
-  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.fillStyle = 'rgba(0,0,0,0.34)';
   ctx.beginPath();
-  ctx.ellipse(cx, cy + 8, 50, 30, 0, 0, Math.PI * 2);
+  ctx.ellipse(cx, cy + 12, 58, 34, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = '#a8572c';
   ctx.beginPath();
-  ctx.ellipse(cx, cy, 50, 30, 0, 0, Math.PI * 2);
+  ctx.ellipse(cx, cy, 58, 34, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = '#c9703c';
   ctx.beginPath();
-  ctx.ellipse(cx, cy - 3, 46, 26, 0, 0, Math.PI * 2);
+  ctx.ellipse(cx, cy - 4, 54, 30, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = '#3a2a20';
+  ctx.fillStyle = '#4b3524';
   ctx.beginPath();
-  ctx.ellipse(cx, cy - 3, 40, 22, 0, 0, Math.PI * 2);
+  ctx.ellipse(cx, cy - 4, 46, 25, 0, 0, Math.PI * 2);
   ctx.fill();
-  // handle
+  ctx.strokeStyle = 'rgba(255,190,120,0.35)';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy - 2, 52, 29, 0, Math.PI * 1.05, Math.PI * 1.75);
+  ctx.stroke();
   ctx.strokeStyle = '#7a4a26';
-  ctx.lineWidth = 8;
+  ctx.lineWidth = 9;
   ctx.beginPath();
-  ctx.moveTo(cx + 48, cy);
-  ctx.lineTo(cx + 78, cy - 14);
+  ctx.moveTo(cx + 55, cy);
+  ctx.lineTo(cx + 92, cy - 16);
   ctx.stroke();
   if (item) {
     const state = item.state === 'burnt' ? 'burnt' : item.done ? 'seared' : 'raw';
-    drawIngredient(ctx, item.ingredient, state, cx, cy - 4, 48);
+    drawIngredient(ctx, item.ingredient, state, cx, cy - 5, 68);
     if (!item.done || item.state === 'burnt') {
       ctx.save();
-      ctx.globalAlpha = 0.8;
-      ring(ctx, cx, cy - 3, 47, 3, item.state === 'burnt' ? 1 : item.progress / 1.2, item.state === 'burnt' ? PALETTE.bad : PALETTE.warn, 'rgba(0,0,0,0.22)');
+      ctx.globalAlpha = 0.85;
+      ring(ctx, cx, cy - 4, 53, 3, item.state === 'burnt' ? 1 : item.progress / 1.2, item.state === 'burnt' ? PALETTE.bad : PALETTE.warn, 'rgba(0,0,0,0.22)');
       ctx.restore();
     }
   }
 }
 
-function drawPlateStation(ctx, kitchen) {
+/** The plate line: the stack of clean plates and the dish being built on the board. */
+function drawPlateStation(ctx, kitchen, recipes) {
   const station = kitchen.plateStation;
   const { box } = station;
-  plank(ctx, box.x, box.y, box.w, box.h, '#8a6236', '#754f28', '#a87a45');
-  for (let i = 0; i < Math.min(station.stack, 5); i += 1) {
-    drawPlateBase(ctx, box.x + 32, box.y + 42 - i * 5, 70);
-  }
-  if (station.plate.parts.length > 0) {
-    drawPlate(ctx, station.plate.parts, box.x + 98, box.y + 32, 92);
-    ctx.font = '700 11px "Trebuchet MS", sans-serif';
-    ctx.fillStyle = PALETTE.paper;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'alphabetic';
-    ctx.fillText(`PLATE · ${station.plate.parts.length}`, box.x + 98, box.y + 78);
-  }
-  ctx.font = '600 11px "Trebuchet MS", sans-serif';
-  ctx.fillStyle = 'rgba(246,231,205,0.6)';
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.fillRect(box.x + 3, box.y + box.h - 5, box.w - 6, 9);
+  plank(ctx, box.x, box.y, box.w, box.h, '#96663c', '#7a4f28', '#c08a4a');
+  ctx.font = `700 10px ${FONT}`;
+  ctx.fillStyle = 'rgba(246,231,205,0.62)';
   ctx.textAlign = 'left';
-  ctx.fillText('PLATE', box.x + 6, box.y + 13);
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText('PLATE', box.x + 8, box.y + 14);
+
+  const stackX = box.x + 34;
+  for (let i = 0; i < Math.min(station.stack, 6); i += 1) {
+    drawPlateBase(ctx, stackX, box.y + 84 - i * 6, 78);
+  }
+
+  const cx = box.x + 106;
+  const cy = box.y + 48;
+  const parts = station.plate.parts;
+  if (parts.length > 0) {
+    const summary = assemblySummary(parts, recipes);
+    drawPlateInProgress(ctx, parts, cx, cy, 132, summary);
+    drawAssemblyBadge(ctx, cx, box.y + box.h - 6, summary);
+  } else {
+    drawPlateBase(ctx, cx, cy, 132);
+    ctx.font = `600 11px ${FONT}`;
+    ctx.fillStyle = 'rgba(255,250,238,0.75)';
+    ctx.textAlign = 'center';
+    ctx.fillText('clean plate', cx, box.y + box.h - 12);
+  }
 }
 
 function drawBin(ctx, kitchen) {
@@ -360,99 +392,53 @@ function drawBin(ctx, kitchen) {
   ctx.translate(box.x + box.w / 2 + wobble, 0);
   ctx.fillStyle = '#4a4f56';
   ctx.beginPath();
-  ctx.moveTo(-24, box.y + 20);
-  ctx.lineTo(24, box.y + 20);
-  ctx.lineTo(19, box.y + 78);
-  ctx.lineTo(-19, box.y + 78);
+  ctx.moveTo(-26, box.y + 20);
+  ctx.lineTo(26, box.y + 20);
+  ctx.lineTo(20, box.y + box.h);
+  ctx.lineTo(-20, box.y + box.h);
   ctx.closePath();
   ctx.fill();
   ctx.fillStyle = '#5c626b';
-  fillRound(ctx, -28, box.y + 12, 56, 12, 4, '#5c626b');
+  fillRound(ctx, -30, box.y + 12, 60, 12, 4, '#5c626b');
   ctx.strokeStyle = '#33373d';
   ctx.lineWidth = 2;
   for (let i = -1; i <= 1; i += 1) {
     ctx.beginPath();
-    ctx.moveTo(i * 12, box.y + 24);
-    ctx.lineTo(i * 10, box.y + 74);
+    ctx.moveTo(i * 13, box.y + 24);
+    ctx.lineTo(i * 11, box.y + box.h - 4);
     ctx.stroke();
   }
   ctx.restore();
-  ctx.font = '600 10px "Trebuchet MS", sans-serif';
+  ctx.font = `700 9px ${FONT}`;
   ctx.fillStyle = 'rgba(246,231,205,0.5)';
   ctx.textAlign = 'center';
   ctx.fillText('BIN', box.x + box.w / 2, box.y + 8);
 }
 
-function drawPass(ctx, kitchen, t) {
-  const { box } = kitchen.pass;
-  // hatch opening with warm light from the room beyond
-  const glow = 0.6 + 0.12 * Math.sin(t * 2) + kitchen.pass.ring * 0.4;
-  ctx.fillStyle = '#0d1216';
-  fillRound(ctx, box.x, box.y, box.w, box.h, 10, '#0d1216');
-  ctx.save();
-  ctx.globalAlpha = glow;
-  ctx.fillStyle = '#6b4a1e';
-  fillRound(ctx, box.x + 10, box.y + 10, box.w - 20, box.h - 26, 8, '#6b4a1e');
-  ctx.restore();
-  fillRound(ctx, box.x + 16, box.y + 16, box.w - 32, box.h - 40, 6, 'rgba(255,214,150,0.35)');
-  ctx.fillStyle = 'rgba(255,236,196,0.5)';
-  ctx.fillRect(box.x + 20, box.y + 18, box.w - 40, 6);
-  // shelf and the bell
-  ctx.fillStyle = '#8a6236';
-  ctx.fillRect(box.x - 6, box.y + box.h - 16, box.w + 12, 14);
-  ctx.fillStyle = '#e8b25a';
-  ctx.beginPath();
-  ctx.arc(box.x + box.w - 44, box.y + box.h - 26, 13, Math.PI, Math.PI * 2);
-  ctx.fill();
-  ctx.fillRect(box.x + box.w - 58, box.y + box.h - 26, 28, 4);
-  ctx.fillStyle = '#f6e7cd';
-  ctx.beginPath();
-  ctx.arc(box.x + box.w - 44, box.y + box.h - 34, 4, 0, Math.PI * 2);
-  ctx.fill();
-  // the sign
-  ctx.font = '700 15px "Trebuchet MS", sans-serif';
-  ctx.fillStyle = PALETTE.brass;
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'alphabetic';
-  ctx.fillText('P A S S', box.x + 22, box.y + box.h - 26);
-  // the pass lamp flares when a plate goes out
-  if (kitchen.pass.ring > 0) {
-    ctx.save();
-    ctx.globalAlpha = kitchen.pass.ring * 0.75;
-    const flare = ctx.createLinearGradient(0, box.y, 0, box.y + box.h);
-    flare.addColorStop(0, 'rgba(255,209,122,0)');
-    flare.addColorStop(0.35, 'rgba(255,209,122,0.85)');
-    flare.addColorStop(1, 'rgba(255,209,122,0)');
-    ctx.fillStyle = flare;
-    ctx.fillRect(box.x + 4, box.y + 2, box.w - 8, box.h - 8);
-    ctx.restore();
-  }
-}
-
-/** Draw every station's furniture. `near` gets a brass ring around it. */
+/** Draw every station's furniture. `near` gets a brass ring on the floor in front of it. */
 export function drawStations(ctx, world, t, near) {
   const { kitchen } = world;
+  const recipes = world.tickets.map((ticket) => ticket.recipe);
   for (const crate of kitchen.crates) drawCrate(ctx, crate);
-  drawBoard(ctx, world, t);
+  drawBoard(ctx, world);
   for (const burner of kitchen.burners) drawBurner(ctx, burner, t);
-  drawPlateStation(ctx, kitchen);
+  drawPlateStation(ctx, kitchen, recipes);
   drawBin(ctx, kitchen);
-  drawPass(ctx, kitchen, t);
+  drawPass(ctx, kitchen.pass, t);
 
   if (near) {
     ctx.save();
-    ctx.strokeStyle = 'rgba(232,178,90,0.85)';
+    ctx.strokeStyle = 'rgba(242,192,105,0.85)';
     ctx.lineWidth = 3;
     ctx.setLineDash([9, 7]);
     ctx.lineDashOffset = -t * 22;
+    const front = near.kind === 'crate' || near.kind === 'board' || near.kind === 'plate' || near.kind === 'bin';
     ctx.beginPath();
-    const y = near.kind === 'crate' || near.kind === 'board' || near.kind === 'plate' || near.kind === 'bin' ? 522 : 400;
-    ctx.ellipse(near.x, y, near.kind === 'pass' ? 60 : 46, 14, 0, 0, Math.PI * 2);
+    ctx.ellipse(near.x, front ? 474 : 402, near.kind === 'pass' ? 64 : 50, 13, 0, 0, Math.PI * 2);
     ctx.stroke();
     ctx.restore();
   }
 
-  // smoke, sparks and floating notes
   for (const cloud of kitchen.smoke) {
     ctx.save();
     ctx.globalAlpha = Math.max(0, cloud.life) * 0.26;
@@ -472,16 +458,16 @@ export function drawStations(ctx, world, t, near) {
   for (const flash of kitchen.flashes) {
     ctx.save();
     ctx.globalAlpha = Math.max(0, flash.life);
-    ctx.font = '700 15px "Trebuchet MS", sans-serif';
+    ctx.font = `700 15px ${FONT}`;
     ctx.fillStyle = flash.color;
     ctx.textAlign = 'center';
     ctx.fillText(flash.text, flash.x, flash.y);
     ctx.restore();
   }
-  // a gentle shadow under the counter edge keeps the two rows apart
-  const shade = ctx.createLinearGradient(0, 398, 0, 428);
-  shade.addColorStop(0, 'rgba(0,0,0,0.45)');
-  shade.addColorStop(1, 'rgba(0,0,0,0)');
+  // the counter edge keeps the two rows apart
+  const shade = ctx.createLinearGradient(0, FRONT.top - 14, 0, FRONT.top + 12);
+  shade.addColorStop(0, 'rgba(0,0,0,0)');
+  shade.addColorStop(1, 'rgba(0,0,0,0.32)');
   ctx.fillStyle = shade;
-  ctx.fillRect(0, 398, 1280, 30);
+  ctx.fillRect(0, FRONT.top - 14, 1280, 26);
 }

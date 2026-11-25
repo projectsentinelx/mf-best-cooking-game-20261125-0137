@@ -47,7 +47,7 @@ export function drawChef(ctx, chef, t) {
 
   ctx.save();
   ctx.translate(chef.x, chef.y + 4);
-  ctx.scale(1.46, 1.46);
+  ctx.scale(1.52, 1.52);
   ctx.fillStyle = 'rgba(0,0,0,0.32)';
   ctx.beginPath();
   ctx.ellipse(x, y + 4, 22, 8, 0, 0, Math.PI * 2);
@@ -79,15 +79,17 @@ export function drawChef(ctx, chef, t) {
   ctx.fillStyle = '#8a2f33';
   ctx.fillRect(x - 3, y - 46 + bob, 6, 16);
 
-  // arms
+  // arms: the back one hangs loose, the front one comes up to whatever is carried
+  const reach = chef.carry ? 1 : 0;
+  const swing = -chef.armSwing * 6;
   ctx.strokeStyle = '#e8c9a8';
   ctx.lineWidth = 6;
-  const lift = chef.carry ? 0.9 : 0.02;
+  ctx.lineCap = 'round';
   ctx.beginPath();
   ctx.moveTo(x - 14, y - 42 + bob);
-  ctx.lineTo(x - 20 - chef.armSwing * 6, y - 42 + bob - lift * 22);
+  ctx.lineTo(x - 22 + swing, y - 26 + bob);
   ctx.moveTo(x + 14, y - 42 + bob);
-  ctx.lineTo(x + 20 + chef.armSwing * 6, y - 42 + bob - lift * 22);
+  ctx.lineTo(x + 17 + reach * 15 + swing, y - 36 + bob - reach * 8);
   ctx.stroke();
 
   // head and toque
@@ -116,10 +118,17 @@ export function drawChef(ctx, chef, t) {
   // what the cook carries
   if (chef.carry && chef.carry.kind === 'item') {
     const item = chef.carry.item;
+    // the little peel the cook carries a component on, so it is not floating
+    ctx.fillStyle = '#b98b52';
+    ctx.beginPath();
+    ctx.ellipse(x + chef.facing * 18, y - 32 + bob + 9, 17, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#8a6234';
+    ctx.fillRect(x + chef.facing * 18 - 4, y - 24 + bob + 9, 8, 8);
     const state = item.done ? (item.method === 'chop' ? 'chopped' : 'seared') : item.state === 'burnt' ? 'burnt' : 'raw';
-    drawIngredient(ctx, item.ingredient, state, x + chef.facing * 18, y - 36 + bob, 32);
+    drawIngredient(ctx, item.ingredient, state, x + chef.facing * 30, y - 42 + bob, 34);
   } else if (chef.carry && chef.carry.kind === 'plate') {
-    drawPlate(ctx, chef.carry.parts, x + chef.facing * 10, y - 34 + bob, 72);
+    drawPlate(ctx, chef.carry.parts, x + chef.facing * 16, y - 44 + bob, 78);
   }
   ctx.restore();
   ctx.lineCap = 'butt';

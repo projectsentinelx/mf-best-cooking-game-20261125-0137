@@ -102,13 +102,14 @@ function drawTicket(ctx, ticket, x, y, served) {
     ctx.restore();
   }
 
-  if (served.size === parts.length && parts.length > 0) {
-    fillRound(ctx, TICKET_W - 74, 10, 60, 18, 9, '#4f7a45');
+  const ready = served.size === parts.length && parts.length > 0;
+  if (ready) {
+    fillRound(ctx, TICKET_W - 82, TICKET_H - 27, 68, 17, 8, '#4f7a45');
     ctx.font = `700 10px ${FONT}`;
     ctx.fillStyle = '#f2ffe9';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('READY', TICKET_W - 44, 20);
+    ctx.fillText('PLATE IT', TICKET_W - 48, TICKET_H - 18);
     ctx.textBaseline = 'alphabetic';
   }
 
@@ -122,10 +123,12 @@ function drawTicket(ctx, ticket, x, y, served) {
     fillRound(ctx, 0, 0, TICKET_W, TICKET_H, 4, '#e2564a');
     ctx.globalAlpha = 1;
   }
-  ctx.font = `700 12px ${FONT}`;
-  ctx.fillStyle = mood === 'urgent' ? PALETTE.bad : '#5c4630';
-  ctx.textAlign = 'right';
-  ctx.fillText(`${Math.ceil(ticket.left)}s`, TICKET_W - 12, barY + 9);
+  if (!ready) {
+    ctx.font = `700 12px ${FONT}`;
+    ctx.fillStyle = mood === 'urgent' ? PALETTE.bad : '#5c4630';
+    ctx.textAlign = 'right';
+    ctx.fillText(`${Math.ceil(ticket.left)}s`, TICKET_W - 12, barY + 9);
+  }
   ctx.restore();
 }
 

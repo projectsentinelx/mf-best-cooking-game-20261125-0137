@@ -6,6 +6,7 @@ import { createKitchen, stationNear } from './kitchen.js';
 import { act, chop, tickStations } from './stations.js';
 import { ageTickets, createTicket, pickRecipe, scoreServe, ticketForPlate, rateShift } from './orders.js';
 import { PALETTE } from './config.js';
+import { sendToPass, tickPass } from './pass.js';
 
 export const SCREEN_TITLE = 'title';
 export const SCREEN_PLAY = 'play';
@@ -85,6 +86,7 @@ export function stepWorld(world, dt, controls) {
   if (controls.held && near && near.kind === 'board') chop(world, dt / CHOP_SECONDS);
 
   tickStations(world.kitchen, dt);
+  tickPass(world.kitchen.pass, dt);
 
   const lost = ageTickets(world.tickets, dt);
   if (lost.length > 0) {
@@ -141,7 +143,7 @@ export function interactWorld(world) {
     world.combo = combo;
     world.bestCombo = Math.max(world.bestCombo, combo);
     world.tickets = world.tickets.filter((item) => item.id !== ticket.id);
-    world.kitchen.pass.ring = 1;
+    sendToPass(world.kitchen.pass, ticket.recipe, world.elapsed);
     toast(world, `+$${scored.total}  ${ticket.recipe.name}${ticket.special ? ' · special' : ''}`, PALETTE.ok);
     if (world.sound) world.sound('serve');
     return { ok: true, note: `Served ${ticket.recipe.name}`, served: ticket.recipe };

@@ -189,6 +189,236 @@ function hangingPans(ctx, t) {
   }
 }
 
+/**
+ * The wall over the rail: one brass rod, the tools a line hangs on it and a run of dockets clipped
+ * along it, plus a column of chalk tallies. It sits behind the tickets in a stop darker than the
+ * cream paper, so the band above the wall is dressed without ever competing with an order card.
+ */
+function wallDressing(ctx) {
+  const rodY = 38;
+  const rod = ctx.createLinearGradient(0, rodY, 0, rodY + 6);
+  rod.addColorStop(0, 'rgba(226,190,132,0.42)');
+  rod.addColorStop(0.42, 'rgba(136,102,62,0.62)');
+  rod.addColorStop(1, 'rgba(40,28,16,0.55)');
+  ctx.fillStyle = rod;
+  ctx.fillRect(16, rodY, 1024, 5);
+  for (const bx of [16, 1036]) {
+    ctx.fillStyle = 'rgba(44,30,16,0.55)';
+    ctx.fillRect(bx - 3, rodY - 4, 8, 14);
+  }
+
+  // a pale silhouette per tool: bowl of a ladle, loops of a whisk, mesh of a sieve
+  const pale = 'rgba(206,232,222,0.26)';
+  const line = 'rgba(214,238,228,0.22)';
+  for (const [kind, tx] of [['ladle', 148], ['whisk', 330], ['sieve', 512], ['ladle', 690], ['ladle', 1028], ['sieve', 1072]]) {
+    ctx.strokeStyle = pale;
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.moveTo(tx, rodY + 5);
+    ctx.lineTo(tx, kind === 'sieve' ? rodY + 44 : rodY + 52);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(24,34,32,0.55)';
+    if (kind === 'ladle') {
+      ctx.beginPath();
+      ctx.ellipse(tx, rodY + 60, 9, 10, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = pale;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(tx, rodY + 60, 9, 10, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    } else if (kind === 'whisk') {
+      ctx.strokeStyle = line;
+      ctx.lineWidth = 1.6;
+      for (let i = 0; i < 3; i += 1) {
+        ctx.beginPath();
+        ctx.ellipse(tx, rodY + 60, 5 + i * 3.4, 13 + i * 2, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    } else {
+      ctx.beginPath();
+      ctx.ellipse(tx, rodY + 52, 13, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = pale;
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.ellipse(tx, rodY + 52, 13, 5, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(206,232,222,0.14)';
+      ctx.lineWidth = 1;
+      for (let i = -2; i <= 2; i += 1) {
+        ctx.beginPath();
+        ctx.moveTo(tx + i * 5, rodY + 48);
+        ctx.lineTo(tx + i * 5, rodY + 56);
+        ctx.stroke();
+      }
+    }
+  }
+
+  // the run of order dockets: flimsy, clipped, each a shade off the wall
+  for (const [dx, tilt] of [[866, -0.05], [910, 0.03], [954, -0.02]]) {
+    ctx.save();
+    ctx.translate(dx, rodY + 6);
+    ctx.rotate(tilt);
+    ctx.fillStyle = 'rgba(10,18,18,0.34)';
+    ctx.fillRect(2, 3, 36, 52);
+    ctx.fillStyle = 'rgba(226,216,192,0.2)';
+    ctx.fillRect(0, 0, 36, 52);
+    ctx.strokeStyle = 'rgba(196,222,212,0.14)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(0.5, 0.5, 35, 51);
+    ctx.fillStyle = 'rgba(206,232,222,0.2)';
+    for (let i = 0; i < 4; i += 1) ctx.fillRect(6, 12 + i * 9, i === 3 ? 14 : 24, 1.6);
+    ctx.fillStyle = 'rgba(60,74,66,0.7)';
+    ctx.fillRect(14, -3, 8, 7);
+    ctx.restore();
+  }
+
+  // chalk tallies, one column, ticked through the shift
+  ctx.strokeStyle = 'rgba(214,240,228,0.2)';
+  ctx.lineWidth = 2;
+  for (let group = 0; group < 3; group += 1) {
+    const gx = 1084 + group * 17;
+    for (let i = 0; i < 3; i += 1) {
+      ctx.beginPath();
+      ctx.moveTo(gx + i * 4, 96);
+      ctx.lineTo(gx + i * 4 + 1, 120);
+      ctx.stroke();
+    }
+    if (group === 2) {
+      ctx.beginPath();
+      ctx.moveTo(gx - 2, 108);
+      ctx.lineTo(gx + 12, 112);
+      ctx.stroke();
+    }
+  }
+}
+
+/**
+ * The far counter's working stretch: the board with a half onion and the knife that cut it, the
+ * bowl of beaten egg, and a stack of clean plates with a cloth, each with its contact shadow. Set
+ * down in the gaps the pans leave, never in front of them.
+ */
+function prepBench(ctx) {
+  const base = 399;
+
+  // board, onion, knife
+  ctx.save();
+  castShadow(ctx, 62, base - 4, 56, 12, 0.42);
+  fillRound(ctx, 16, base - 22, 92, 22, 5, '#9d6c3b');
+  ctx.fillStyle = 'rgba(255,232,190,0.22)';
+  ctx.fillRect(20, base - 22, 84, 3);
+  ctx.fillStyle = 'rgba(52,32,16,0.28)';
+  ctx.fillRect(20, base - 4, 84, 3);
+  ctx.strokeStyle = 'rgba(60,38,18,0.35)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 3; i += 1) {
+    ctx.beginPath();
+    ctx.moveTo(24, base - 17 + i * 5);
+    ctx.quadraticCurveTo(62, base - 18 + i * 5, 100, base - 16 + i * 5);
+    ctx.stroke();
+  }
+  // half onion, cut face up
+  ctx.fillStyle = '#e8dcc0';
+  ctx.beginPath();
+  ctx.ellipse(52, base - 25, 17, 11, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#f6efe0';
+  ctx.beginPath();
+  ctx.ellipse(52, base - 27, 14, 8, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(160,120,140,0.55)';
+  ctx.lineWidth = 1;
+  for (let r = 3; r <= 11; r += 4) {
+    ctx.beginPath();
+    ctx.ellipse(52, base - 27, r, r * 0.55, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.fillStyle = 'rgba(196,168,140,0.8)';
+  ctx.beginPath();
+  ctx.ellipse(52, base - 27, 2.5, 1.6, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // the knife, laid down where the hand left it
+  ctx.save();
+  ctx.translate(88, base - 32);
+  ctx.rotate(-0.22);
+  ctx.fillStyle = 'rgba(12,18,20,0.3)';
+  ctx.beginPath();
+  ctx.ellipse(4, 4, 21, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#c9d2cf';
+  ctx.beginPath();
+  ctx.moveTo(-16, -3.5);
+  ctx.lineTo(9, -1.5);
+  ctx.lineTo(9, 2.5);
+  ctx.lineTo(-16, 3.5);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.fillRect(-14, -2.5, 22, 1.4);
+  ctx.fillStyle = '#59391f';
+  fillRound(ctx, 9, -3, 15, 6, 2, '#59391f');
+  ctx.restore();
+  ctx.restore();
+
+  // bowl of beaten egg
+  ctx.save();
+  castShadow(ctx, 162, base - 2, 30, 9, 0.4);
+  ctx.fillStyle = '#8d9c96';
+  ctx.beginPath();
+  ctx.ellipse(162, base - 8, 24, 10, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#d7dcd4';
+  ctx.beginPath();
+  ctx.ellipse(162, base - 11, 23, 9, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#e8d489';
+  ctx.beginPath();
+  ctx.ellipse(162, base - 12, 19, 7, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,250,214,0.7)';
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  ctx.arc(160, base - 12, 9, 0.4, 2.2);
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.beginPath();
+  ctx.ellipse(148, base - 15, 6, 2, -0.4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // clean plates, stacked, and the cloth they were dried with
+  ctx.save();
+  castShadow(ctx, 646, base - 3, 34, 10, 0.4);
+  for (let i = 0; i < 3; i += 1) {
+    const py = base - 6 - i * 6;
+    ctx.fillStyle = '#8c9187';
+    ctx.beginPath();
+    ctx.ellipse(646, py + 2, 29, 7, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#e2ddcd';
+    ctx.beginPath();
+    ctx.ellipse(646, py, 29, 7, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.ellipse(646, py - 1, 21, 4.6, 0, Math.PI, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.restore();
+  ctx.save();
+  castShadow(ctx, 700, base - 2, 26, 7, 0.32);
+  fillRound(ctx, 676, base - 18, 50, 16, 4, '#e4d9c1');
+  ctx.fillStyle = 'rgba(164,54,44,0.85)';
+  ctx.fillRect(676, base - 12, 50, 4);
+  ctx.fillStyle = 'rgba(0,0,0,0.14)';
+  ctx.fillRect(676, base - 6, 50, 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.22)';
+  ctx.fillRect(678, base - 18, 46, 2);
+  ctx.restore();
+}
+
 /** The far counter: the hot line, the stock pot and the shelf under it. */
 function backCounter(ctx, t) {
   plank(ctx, L, BACK.top, W, BACK.bottom - BACK.top, PALETTE.counter, '#6b4526', PALETTE.counterTop);
@@ -428,11 +658,13 @@ export function drawRoom(ctx, t) {
   ctx.fillStyle = PALETTE.night;
   ctx.fillRect(L, WALL.top - 320, W, BOTTOM - WALL.top + 320);
   tileWall(ctx);
+  wallDressing(ctx);
   chalkboard(ctx);
   shelf(ctx);
   hangingPans(ctx, t);
   lightPool(ctx, 640, WALL.bottom, 260, 'rgba(255,206,132,0.4)', 0.4);
   backCounter(ctx, t);
+  prepBench(ctx);
   barFront(ctx);
   aisle(ctx);
   frontCounter(ctx);

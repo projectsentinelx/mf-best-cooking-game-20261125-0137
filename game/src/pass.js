@@ -2,7 +2,7 @@
 // when a dish goes out — the lamp flares, the plate slides under it, and it fades as the room takes
 // it away. The pass is the end of every route through the kitchen, so it gets the brightest light.
 import { FONT, PALETTE } from './config.js';
-import { drawDish } from './food.js';
+import { drawDish, drawPlateBase } from './food.js';
 import { fillRound, castShadow, lightPool, steamPuff } from './paint.js';
 
 const PLATE_LIFE = 9;
@@ -118,6 +118,62 @@ export function drawPass(ctx, pass, t) {
 
   // every plate waiting under the lamp, newest nearest the middle
   const shelfY = box.y + box.h - 12;
+
+  // the shelf's own kit, at the near end by the bell: clean plates waiting in a stack and the
+  // service cloth folded beside them. Drawn before the waiting dishes so a dish sits in front.
+  const nearX = box.x + box.w * 0.62;
+  castShadow(ctx, nearX, shelfY - 4, 40, 12, 0.45);
+  for (let i = 0; i < 3; i += 1) {
+    const py = shelfY - 6 - i * 6;
+    ctx.fillStyle = 'rgba(96,84,62,0.55)';
+    ctx.beginPath();
+    ctx.ellipse(nearX, py + 2, 30, 7, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#e7ddc6';
+    ctx.beginPath();
+    ctx.ellipse(nearX, py, 30, 7, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,250,235,0.65)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.ellipse(nearX, py - 1.5, 21, 4.4, 0, Math.PI, Math.PI * 2);
+    ctx.stroke();
+  }
+  castShadow(ctx, nearX + 58, shelfY - 2, 22, 7, 0.3);
+  fillRound(ctx, nearX + 36, shelfY - 18, 46, 14, 4, '#efe5cd');
+  ctx.fillStyle = 'rgba(168,56,44,0.8)';
+  ctx.fillRect(nearX + 36, shelfY - 12, 46, 3.5);
+  ctx.fillStyle = 'rgba(0,0,0,0.14)';
+  ctx.fillRect(nearX + 36, shelfY - 7, 46, 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.fillRect(nearX + 38, shelfY - 18, 42, 2);
+
+  // the docket spike hung on the frame, its tickets still curled from the pass
+  ctx.save();
+  ctx.translate(box.x + 58, box.y - 4);
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.fillRect(-2, 0, 4, 30);
+  ctx.fillStyle = '#b08b46';
+  ctx.fillRect(-1.6, 0, 3.2, 28);
+  ctx.beginPath();
+  ctx.ellipse(0, 28, 5, 2, 0, 0, Math.PI * 2);
+  ctx.fill();
+  for (const [dx, tilt] of [[-2, -0.16], [7, 0.1]]) {
+    ctx.save();
+    ctx.translate(dx, 6);
+    ctx.rotate(tilt);
+    ctx.fillStyle = 'rgba(20,14,8,0.45)';
+    ctx.fillRect(1, 2, 24, 28);
+    ctx.fillStyle = 'rgba(240,228,200,0.86)';
+    ctx.fillRect(0, 0, 24, 28);
+    ctx.fillStyle = 'rgba(90,70,44,0.5)';
+    for (let i = 0; i < 3; i += 1) ctx.fillRect(4, 9 + i * 6, i === 2 ? 9 : 16, 1.4);
+    ctx.fillStyle = 'rgba(58,42,24,0.8)';
+    ctx.fillRect(8, -1, 8, 4);
+    ctx.restore();
+  }
+  ctx.restore();
+
   for (let i = 0; i < pass.plates.length; i += 1) {
     const plate = pass.plates[i];
     const age = 1 - plate.life;

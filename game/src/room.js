@@ -218,14 +218,16 @@ function aisle(ctx) {
     ctx.stroke();
   }
   for (const lx of [300, 640, 980]) lightPool(ctx, lx, 440, 200, 'rgba(255,203,126,0.5)', 0.42);
-  // the runner mat along the pass end of the aisle
-  ctx.fillStyle = 'rgba(112,44,40,0.6)';
-  ctx.fillRect(900, 420, 330, 40);
-  ctx.strokeStyle = 'rgba(242,192,105,0.3)';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(906, 425, 318, 30);
-  ctx.fillStyle = 'rgba(0,0,0,0.16)';
-  for (let x = 914; x < 1216; x += 20) ctx.fillRect(x, 425, 2, 30);
+  // one worn runner down the whole line, so the aisle is a working floor with a history
+  for (const [x0, x1] of [[150, 872], [886, 1230]]) {
+    ctx.fillStyle = 'rgba(112,44,40,0.62)';
+    ctx.fillRect(x0, 412, x1 - x0, 44);
+    ctx.strokeStyle = 'rgba(242,192,105,0.32)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x0 + 6, 417, x1 - x0 - 12, 34);
+    ctx.fillStyle = 'rgba(0,0,0,0.16)';
+    for (let x = x0 + 14; x < x1 - 12; x += 20) ctx.fillRect(x, 417, 2, 34);
+  }
 }
 
 /** The pantry counter the cook works along, under the warmest lamp in the room. */

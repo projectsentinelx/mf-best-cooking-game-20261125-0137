@@ -298,19 +298,16 @@ function drawBurner(ctx, burner, t) {
     ctx.fill();
   }
   ctx.globalAlpha = 1;
-  ctx.strokeStyle = '#2b2b30';
-  ctx.lineWidth = 6;
+  // the iron ring the pan sits in: a thin dark collar, never a black wheel around the copper
+  ctx.fillStyle = '#302a26';
   ctx.beginPath();
-  ctx.arc(cx, cy, 60, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.strokeStyle = '#3c3c44';
+  ctx.ellipse(cx, cy + 4, 62, 37, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,0.35)';
   ctx.lineWidth = 2;
-  for (let i = -2; i <= 2; i += 1) {
-    ctx.beginPath();
-    ctx.moveTo(cx - 54, cy + i * 18);
-    ctx.lineTo(cx + 54, cy + i * 18);
-    ctx.stroke();
-  }
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + 4, 62, 37, 0, 0, Math.PI * 2);
+  ctx.stroke();
   const item = burner.item;
   ctx.fillStyle = 'rgba(0,0,0,0.34)';
   ctx.beginPath();
@@ -324,7 +321,10 @@ function drawBurner(ctx, burner, t) {
   ctx.beginPath();
   ctx.ellipse(cx, cy - 4, 54, 30, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = '#4b3524';
+  const inner = ctx.createRadialGradient(cx - 8, cy - 12, 4, cx, cy - 4, 48);
+  inner.addColorStop(0, '#6b4a2c');
+  inner.addColorStop(1, '#3f2a1c');
+  ctx.fillStyle = inner;
   ctx.beginPath();
   ctx.ellipse(cx, cy - 4, 46, 25, 0, 0, Math.PI * 2);
   ctx.fill();
@@ -341,7 +341,7 @@ function drawBurner(ctx, burner, t) {
   ctx.stroke();
   if (item) {
     const state = item.state === 'burnt' ? 'burnt' : item.done ? 'seared' : 'raw';
-    drawIngredient(ctx, item.ingredient, state, cx, cy - 5, 68);
+    drawIngredient(ctx, item.ingredient, state, cx, cy - 6, 64);
     if (!item.done || item.state === 'burnt') {
       ctx.save();
       ctx.globalAlpha = 0.85;

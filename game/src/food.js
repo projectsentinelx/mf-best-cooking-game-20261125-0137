@@ -6,10 +6,18 @@ import { INGREDIENTS } from './pantry.js';
 
 /** A soft contact shadow so nothing floats on the counter. */
 function shadow(ctx, x, y, rx, ry, alpha = 0.3) {
-  ctx.fillStyle = `rgba(0,0,0,${alpha})`;
+  ctx.save();
+  ctx.translate(x + rx * 0.16, y + ry * 0.26);
+  ctx.scale(1, Math.max(0.06, ry / rx));
+  const gradient = ctx.createRadialGradient(0, 0, rx * 0.08, 0, 0, rx);
+  gradient.addColorStop(0, `rgba(0,0,0,${alpha})`);
+  gradient.addColorStop(0.66, `rgba(0,0,0,${alpha * 0.42})`);
+  gradient.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = gradient;
   ctx.beginPath();
-  ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+  ctx.arc(0, 0, rx, 0, Math.PI * 2);
   ctx.fill();
+  ctx.restore();
 }
 
 /** The lit side: one pale blob, high and to the left. */
@@ -41,31 +49,60 @@ const CHOP_BITS = [
 ];
 
 function cubes(ctx, x, y, s, fill, edge, inner) {
+  let n = 0;
   for (const [bx, by, br] of CHOP_BITS) {
     const px = x + bx * s;
     const py = y + by * s;
     const r = br * s * 0.52;
-    ctx.fillStyle = fill;
+    // every piece landed differently: a fixed tilt per bit, so a heap is a heap and not a grid
+    const tilt = (((n * 47) % 11) - 5) * 0.11;
+    ctx.save();
+    ctx.translate(px, py);
+    ctx.rotate(tilt);
+    // the cut piece sits on the plate with a shadow of its own, thrown right and down
+    ctx.save();
+    ctx.rotate(-tilt);
+    shadow(ctx, 0, r * 0.65, r * 0.95, r * 0.32, 0.26);
+    ctx.restore();
+    const face = ctx.createLinearGradient(-r, -r, r, r);
+    face.addColorStop(0, inner || fill);
+    face.addColorStop(0.55, fill);
+    face.addColorStop(1, edge);
+    ctx.fillStyle = face;
     ctx.beginPath();
-    ctx.moveTo(px - r, py - r * 0.7);
-    ctx.lineTo(px + r * 0.82, py - r);
-    ctx.lineTo(px + r, py + r * 0.7);
-    ctx.lineTo(px - r * 0.7, py + r);
+    ctx.moveTo(-r, -r * 0.7);
+    ctx.lineTo(r * 0.82, -r);
+    ctx.lineTo(r, r * 0.7);
+    ctx.lineTo(-r * 0.7, r);
     ctx.closePath();
     ctx.fill();
-    if (inner) {
-      ctx.fillStyle = inner;
-      ctx.beginPath();
-      ctx.moveTo(px - r * 0.5, py - r * 0.36);
-      ctx.lineTo(px + r * 0.3, py - r * 0.5);
-      ctx.lineTo(px + r * 0.36, py + r * 0.22);
-      ctx.lineTo(px - r * 0.3, py + r * 0.36);
-      ctx.closePath();
-      ctx.fill();
-    }
+    // the wet cut face catches the key along its upper left
+    ctx.fillStyle = inner || fill;
+    ctx.globalAlpha = 0.55;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.72, -r * 0.5);
+    ctx.lineTo(r * 0.3, -r * 0.72);
+    ctx.lineTo(r * 0.28, -r * 0.28);
+    ctx.lineTo(-r * 0.6, -r * 0.1);
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 1;
     ctx.strokeStyle = edge;
-    ctx.lineWidth = Math.max(0.8, s * 0.035);
+    ctx.lineWidth = Math.max(0.9, s * 0.03);
+    ctx.beginPath();
+    ctx.moveTo(-r, -r * 0.7);
+    ctx.lineTo(r * 0.82, -r);
+    ctx.lineTo(r, r * 0.7);
+    ctx.lineTo(-r * 0.7, r);
+    ctx.closePath();
     ctx.stroke();
+    // one specular bead so a heap of chopped tomato reads as wet, not painted
+    ctx.fillStyle = 'rgba(255,248,236,0.7)';
+    ctx.beginPath();
+    ctx.ellipse(-r * 0.3, -r * 0.32, r * 0.2, r * 0.12, -0.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    n += 1;
   }
 }
 
@@ -113,10 +150,14 @@ function dough(ctx, x, y, s, state) {
   const rx = s * 0.47;
   const ry = s * 0.36;
   const seared = state === 'seared';
-  shadow(ctx, x, y + ry * 0.85, rx * 0.95, ry * 0.3, 0.3);
+  shadow(ctx, x, y + ry * 0.85, rx * 0.95, ry * 0.34, 0.32);
+  ctx.fillStyle = seared ? '#8a4a1a' : '#cbb388';
+  ctx.beginPath();
+  ctx.ellipse(x, y + s * 0.012, rx, ry, 0, 0, Math.PI * 2);
+  ctx.fill();
   ctx.fillStyle = seared ? '#c98a42' : c.flesh;
   ctx.beginPath();
-  ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+  ctx.ellipse(x, y - s * 0.004, rx * 0.93, ry * 0.9, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = seared ? '#e2ae66' : c.accent;
   ctx.beginPath();
@@ -331,10 +372,15 @@ function bread(ctx, x, y, s, state) {
   const seared = state === 'seared';
   const rx = s * 0.44;
   const ry = s * 0.34;
-  shadow(ctx, x, y + ry * 0.85, rx * 0.92, ry * 0.28, 0.3);
+  shadow(ctx, x, y + ry * 0.85, rx * 0.95, ry * 0.34, 0.32);
+  // the crust: a dark band round the whole slice, thicker at the near edge
+  ctx.fillStyle = seared ? '#6d3a15' : '#b8894f';
+  ctx.beginPath();
+  ctx.ellipse(x, y + s * 0.012, rx, ry, 0, 0, Math.PI * 2);
+  ctx.fill();
   ctx.fillStyle = seared ? '#a9622c' : c.flesh;
   ctx.beginPath();
-  ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+  ctx.ellipse(x, y - s * 0.005, rx * 0.93, ry * 0.9, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = seared ? '#ddb478' : c.accent;
   ctx.beginPath();
@@ -434,38 +480,64 @@ export function drawIngredient(ctx, ingredientId, state, x, y, size) {
   drawer(ctx, x, y, size, key);
 }
 
-/** The plate itself: a warm cream rim, a shadowed well and one thin copper line. */
+/** The plate itself: a warm cream rim with real thickness, a shadowed well and one thin copper line. */
 export function drawPlateBase(ctx, x, y, size) {
   const rx = size * 0.5;
   const ry = size * 0.34;
   ctx.save();
-  shadow(ctx, x, y + size * 0.075, rx * 0.98, ry * 0.92, 0.32);
+  // a plate standing on a counter has a soft, wide shadow, not a sticker under it
+  shadow(ctx, x, y + size * 0.1, rx * 1.06, ry * 1.0, 0.4);
+  // the thickness of the rim, showing under the near edge
+  ctx.fillStyle = '#9e8f76';
+  ctx.beginPath();
+  ctx.ellipse(x, y + size * 0.032, rx, ry, 0, 0, Math.PI * 2);
+  ctx.fill();
   const rim = ctx.createLinearGradient(x - rx, y - ry, x + rx, y + ry);
-  rim.addColorStop(0, '#fffaf0');
-  rim.addColorStop(0.55, '#efe7d6');
-  rim.addColorStop(1, '#cfc2ac');
+  rim.addColorStop(0, '#fffdf6');
+  rim.addColorStop(0.42, '#f4ecdc');
+  rim.addColorStop(0.78, '#ded2ba');
+  rim.addColorStop(1, '#b9ab92');
   ctx.fillStyle = rim;
   ctx.beginPath();
   ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
   ctx.fill();
-  const well = ctx.createRadialGradient(x - rx * 0.2, y - ry * 0.3, rx * 0.1, x, y, rx * 0.8);
-  well.addColorStop(0, '#fffdf6');
-  well.addColorStop(1, '#e7dcc8');
+  // the rim's inner wall, in shadow at the bottom where the well cuts down into it
+  ctx.strokeStyle = 'rgba(146,128,102,0.5)';
+  ctx.lineWidth = Math.max(1, size * 0.016);
+  ctx.beginPath();
+  ctx.ellipse(x, y + size * 0.004, rx * 0.86, ry * 0.84, 0, 0.15, Math.PI - 0.15);
+  ctx.stroke();
+  const well = ctx.createRadialGradient(x - rx * 0.22, y - ry * 0.34, rx * 0.1, x, y, rx * 0.82);
+  well.addColorStop(0, '#fffef9');
+  well.addColorStop(0.55, '#f6eedd');
+  well.addColorStop(1, '#ded1b8');
   ctx.fillStyle = well;
   ctx.beginPath();
   ctx.ellipse(x, y + size * 0.005, rx * 0.79, ry * 0.76, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.strokeStyle = 'rgba(160,142,116,0.55)';
+  ctx.strokeStyle = 'rgba(150,132,104,0.6)';
   ctx.lineWidth = Math.max(1, size * 0.012);
   ctx.beginPath();
   ctx.ellipse(x, y, rx * 0.79, ry * 0.76, 0, 0, Math.PI * 2);
   ctx.stroke();
-  ctx.strokeStyle = 'rgba(193,116,66,0.5)';
+  ctx.strokeStyle = 'rgba(193,116,66,0.55)';
   ctx.lineWidth = Math.max(1, size * 0.012);
   ctx.beginPath();
   ctx.ellipse(x, y, rx * 0.89, ry * 0.88, 0, 0, Math.PI * 2);
   ctx.stroke();
-  gloss(ctx, x - rx * 0.4, y - ry * 0.55, rx * 0.16, ry * 0.08, -0.35, 0.75);
+  // porcelain: one broad sheen over the upper left of the rim, one small hot spot
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+  ctx.lineWidth = Math.max(1.6, size * 0.036);
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.ellipse(x, y, rx * 0.945, ry * 0.93, 0, Math.PI * 1.12, Math.PI * 1.52);
+  ctx.stroke();
+  ctx.restore();
+  gloss(ctx, x - rx * 0.38, y - ry * 0.52, rx * 0.2, ry * 0.09, -0.35, 0.8);
   ctx.restore();
 }
 

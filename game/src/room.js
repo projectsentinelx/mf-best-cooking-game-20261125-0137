@@ -3,7 +3,7 @@
 // here is state — it is the same kitchen every shift, painted once a frame so the lamps can breathe
 // and the steam can cross it. Every band comes from config.js, so the room and the stations agree.
 import { BACK, FIELD, FOREGROUND, FRONT, PALETTE, WALL } from './config.js';
-import { fillRound, lightPool, plank, vGradient } from './paint.js';
+import { castShadow, fillRound, grain, keyWash, lightPool, litSurface, plank, vGradient } from './paint.js';
 import { RECIPES } from './recipes.js';
 
 const FONT = '"Trebuchet MS", "Segoe UI", Verdana, sans-serif';
@@ -18,34 +18,52 @@ const BOTTOM = FIELD.height + 460;
 function tileWall(ctx) {
   const top = WALL.top;
   const height = WALL.bottom - top;
-  vGradient(ctx, L, top, W, height, '#2a5a58', '#152c2e');
+  // The wall is warmed where the window and the pass lamp stand at the left of the room, and cools
+  // and darkens toward the far right corner — one light, one gradient, whole wall.
+  const base = ctx.createLinearGradient(-380, top - 30, 1200, top + height);
+  base.addColorStop(0, '#3c7670');
+  base.addColorStop(0.3, '#2a5a55');
+  base.addColorStop(0.72, '#1d4041');
+  base.addColorStop(1, '#102629');
+  ctx.fillStyle = base;
+  ctx.fillRect(L, top, W, height);
+
   const tileW = 62;
   const tileH = 40;
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = 'rgba(86,150,144,0.55)';
+  // grout first: a dark bed the tiles sit in
+  ctx.fillStyle = 'rgba(8,20,20,0.5)';
   for (let row = 0; row * tileH <= height; row += 1) {
-    const y = top + row * tileH;
+    ctx.fillRect(L, top + row * tileH - 1, W, 2);
+  }
+  for (let row = 0; row * tileH <= height; row += 1) {
     const offset = row % 2 === 0 ? 0 : -tileW / 2;
     for (let col = -9; col * tileW < R + tileW; col += 1) {
       const x = col * tileW + offset;
-      ctx.fillStyle = (row + col) % 4 === 0 ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.07)';
+      const y = top + row * tileH;
+      const tone = ((row * 7 + col * 13) % 7) / 7;
+      // each tile its own glaze: a hair lighter or greener than its neighbours
+      ctx.fillStyle = tone > 0.5 ? `rgba(240,255,238,${0.025 + tone * 0.04})` : `rgba(6,26,24,${0.05 + tone * 0.08})`;
       ctx.fillRect(x + 1, y + 1, tileW - 2, tileH - 2);
-      ctx.strokeRect(x, y, tileW, tileH);
+      // the bevel: light along the top and left, shadow along the bottom and right
+      ctx.fillStyle = 'rgba(206,246,236,0.13)';
+      ctx.fillRect(x + 1.5, y + 1.5, tileW - 3, 1.6);
+      ctx.fillRect(x + 1.5, y + 1.5, 1.6, tileH - 3);
+      ctx.fillStyle = 'rgba(0,0,0,0.24)';
+      ctx.fillRect(x + 1.5, y + tileH - 3, tileW - 3, 1.6);
+      ctx.fillRect(x + tileW - 3, y + 1.5, 1.6, tileH - 3);
     }
   }
-  // the grout catches the lamps: a lit line along each row
-  ctx.strokeStyle = 'rgba(190,238,230,0.12)';
-  ctx.lineWidth = 1;
-  for (let row = 0; row * tileH <= height; row += 1) {
-    ctx.beginPath();
-    ctx.moveTo(L, top + row * tileH + 1);
-    ctx.lineTo(R, top + row * tileH + 1);
-    ctx.stroke();
-  }
+  // the key catches the grout on the left of the room and loses it to the right
+  const grout = ctx.createLinearGradient(-300, 0, 1250, 0);
+  grout.addColorStop(0, 'rgba(196,240,230,0.16)');
+  grout.addColorStop(0.55, 'rgba(196,240,230,0.04)');
+  grout.addColorStop(1, 'rgba(196,240,230,0)');
+  ctx.fillStyle = grout;
+  ctx.fillRect(L, top, W, height);
   const shade = ctx.createLinearGradient(0, top, 0, WALL.bottom);
-  shade.addColorStop(0, 'rgba(0,0,0,0.4)');
-  shade.addColorStop(0.45, 'rgba(0,0,0,0.06)');
-  shade.addColorStop(1, 'rgba(0,0,0,0.45)');
+  shade.addColorStop(0, 'rgba(4,10,12,0.5)');
+  shade.addColorStop(0.4, 'rgba(4,10,12,0.06)');
+  shade.addColorStop(1, 'rgba(4,10,12,0.5)');
   ctx.fillStyle = shade;
   ctx.fillRect(L, top, W, height);
 }
@@ -56,7 +74,8 @@ function chalkboard(ctx) {
   const y = 150;
   const w = 392;
   const h = 104;
-  fillRound(ctx, x - 8, y - 8, w + 16, h + 16, 7, '#43290f');
+  castShadow(ctx, x + w / 2, y + h + 2, w * 0.62, 22, 0.4);
+  fillRound(ctx, x - 8, y - 8, w + 16, h + 16, 7, '#3a230d');
   fillRound(ctx, x - 4, y - 4, w + 8, h + 8, 5, '#6b4522');
   const slate = ctx.createLinearGradient(x, y, x, y + h);
   slate.addColorStop(0, '#1e2b29');
@@ -100,10 +119,10 @@ function chalkboard(ctx) {
 /** The shelf of dry goods, and the sprig of thyme hung at its end. */
 function shelf(ctx) {
   const y = 244;
-  ctx.fillStyle = '#4d3019';
+  castShadow(ctx, 440 + 192, y + 12, 196, 14, 0.45);
+  ctx.fillStyle = '#3f2712';
   ctx.fillRect(440, y, 384, 10);
-  ctx.fillStyle = '#8a5c33';
-  ctx.fillRect(440, y, 384, 4);
+  litSurface(ctx, 440, y - 1, 384, 6, '#a9713f', '#7d4f2a');
   const jars = [
     [456, 30, '#c9a04b', 'OIL'], [492, 34, '#7d8f4a', 'HERB'], [528, 28, '#b5563a', 'PEPP'],
     [562, 36, '#e6d6ae', 'SALT'], [600, 30, '#8a5a33', 'STOCK'], [636, 34, '#a8477a', 'BEET'],
@@ -173,23 +192,34 @@ function hangingPans(ctx, t) {
 /** The far counter: the hot line, the stock pot and the shelf under it. */
 function backCounter(ctx, t) {
   plank(ctx, L, BACK.top, W, BACK.bottom - BACK.top, PALETTE.counter, '#6b4526', PALETTE.counterTop);
-  ctx.fillStyle = 'rgba(0,0,0,0.3)';
-  ctx.fillRect(L, BACK.top, W, 10);
-  ctx.fillStyle = 'rgba(255,214,150,0.14)';
-  ctx.fillRect(L, BACK.top + 10, W, 4);
-  ctx.fillStyle = '#4d3019';
-  ctx.fillRect(L, BACK.bottom - 14, W, 14);
+  // the wall throws its shadow onto the back edge of the counter; the near edge falls into a fascia
+  const under = ctx.createLinearGradient(0, BACK.top, 0, BACK.top + 46);
+  under.addColorStop(0, 'rgba(4,10,12,0.62)');
+  under.addColorStop(0.55, 'rgba(4,10,12,0.22)');
+  under.addColorStop(1, 'rgba(4,10,12,0)');
+  ctx.fillStyle = under;
+  ctx.fillRect(L, BACK.top, W, 46);
+  ctx.fillStyle = 'rgba(255,222,168,0.16)';
+  ctx.fillRect(L, BACK.top + 46, W, 3);
+  ctx.fillStyle = '#3f2712';
+  ctx.fillRect(L, BACK.bottom - 16, W, 16);
+  ctx.fillStyle = 'rgba(255,206,140,0.2)';
+  ctx.fillRect(L, BACK.bottom - 16, W, 2);
 
   // the stock pot, simmering between the pans and the pass
   const px = 786;
-  ctx.fillStyle = 'rgba(0,0,0,0.34)';
-  ctx.beginPath();
-  ctx.ellipse(px, 384, 52, 13, 0, 0, Math.PI * 2);
-  ctx.fill();
-  fillRound(ctx, px - 48, 300, 96, 84, 12, '#8c4c26');
-  fillRound(ctx, px - 42, 304, 34, 70, 10, '#b0663a');
-  fillRound(ctx, px - 56, 290, 112, 16, 8, '#6b3720');
-  fillRound(ctx, px - 48, 292, 96, 6, 3, '#c98551');
+  castShadow(ctx, px, 386, 64, 18, 0.5);
+  fillRound(ctx, px - 48, 300, 96, 84, 12, '#7e4220');
+  const potSide = ctx.createLinearGradient(px - 48, 0, px + 48, 0);
+  potSide.addColorStop(0, 'rgba(255,196,132,0.5)');
+  potSide.addColorStop(0.3, 'rgba(255,176,104,0.1)');
+  potSide.addColorStop(0.78, 'rgba(40,16,6,0.34)');
+  potSide.addColorStop(1, 'rgba(24,10,4,0.6)');
+  fillRound(ctx, px - 48, 300, 96, 84, 12, potSide);
+  ctx.fillStyle = 'rgba(255,236,196,0.34)';
+  ctx.fillRect(px - 38, 308, 5, 66);
+  fillRound(ctx, px - 56, 290, 112, 16, 8, '#5c2f1a');
+  fillRound(ctx, px - 48, 292, 96, 6, 3, '#d5965e');
   ctx.fillStyle = 'rgba(255,246,232,0.4)';
   for (let i = 0; i < 4; i += 1) {
     const w = 2 + (i % 2);
@@ -209,6 +239,19 @@ function backCounter(ctx, t) {
 /** The aisle: a worn floor between the two counters, lit in pools from the lamps above. */
 function aisle(ctx) {
   vGradient(ctx, L, 398, W, FRONT.top - 398, '#37271c', '#241811');
+  // the floor takes the same key as the wall: warm at the left, cool and dark at the right
+  const floorLight = ctx.createLinearGradient(-200, 398, 1240, 470);
+  floorLight.addColorStop(0, 'rgba(255,196,124,0.22)');
+  floorLight.addColorStop(0.42, 'rgba(255,186,112,0.07)');
+  floorLight.addColorStop(1, 'rgba(30,54,80,0.3)');
+  ctx.fillStyle = floorLight;
+  ctx.fillRect(L, 398, W, FRONT.top - 398);
+  // the two counters overhang the aisle and shade its edges
+  const lip = ctx.createLinearGradient(0, 398, 0, 418);
+  lip.addColorStop(0, 'rgba(0,0,0,0.55)');
+  lip.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = lip;
+  ctx.fillRect(L, 398, W, 20);
   ctx.strokeStyle = 'rgba(0,0,0,0.32)';
   ctx.lineWidth = 2;
   for (let y = 412; y < FRONT.top; y += 18) {
@@ -224,7 +267,7 @@ function aisle(ctx) {
     ctx.lineTo(x - 12, FRONT.top);
     ctx.stroke();
   }
-  for (const lx of [300, 640, 980]) lightPool(ctx, lx, 440, 200, 'rgba(255,203,126,0.5)', 0.42);
+  for (const lx of [300, 640, 980]) lightPool(ctx, lx, 442, 210, 'rgba(255,203,126,0.55)', 0.5);
   // one worn runner down the whole line, so the aisle is a working floor with a history
   for (const [x0, x1] of [[150, 872], [886, 1230]]) {
     ctx.fillStyle = 'rgba(112,44,40,0.62)';
@@ -322,15 +365,24 @@ function aisleProps(ctx) {
 /** The pantry counter the cook works along, under the warmest lamp in the room. */
 function frontCounter(ctx) {
   plank(ctx, L, FRONT.top, W, FRONT.bottom - FRONT.top, '#96663c', '#7a4f28', '#c08a4a');
-  ctx.fillStyle = 'rgba(0,0,0,0.34)';
-  ctx.fillRect(L, FRONT.top, W, 8);
-  ctx.fillStyle = 'rgba(255,214,150,0.16)';
-  ctx.fillRect(L, FRONT.top + 8, W, 3);
+  // the back counter and the cook throw a shadow onto the far edge of this one
+  const under = ctx.createLinearGradient(0, FRONT.top, 0, FRONT.top + 40);
+  under.addColorStop(0, 'rgba(6,10,12,0.55)');
+  under.addColorStop(0.7, 'rgba(6,10,12,0.14)');
+  under.addColorStop(1, 'rgba(6,10,12,0)');
+  ctx.fillStyle = under;
+  ctx.fillRect(L, FRONT.top, W, 40);
   // a pool of lamp light across the work surface, strongest over the plate station
-  lightPool(ctx, 470, FRONT.top + 40, 330, 'rgba(255,206,132,0.55)', 0.5);
-  lightPool(ctx, 1040, FRONT.top + 34, 300, 'rgba(255,214,146,0.6)', 0.55);
-  ctx.fillStyle = '#4a2f1d';
-  ctx.fillRect(L, FRONT.bottom - 12, W, 12);
+  lightPool(ctx, 470, FRONT.top + 54, 360, 'rgba(255,206,132,0.6)', 0.62);
+  lightPool(ctx, 1055, FRONT.top + 50, 340, 'rgba(255,214,146,0.72)', 0.72);
+  lightPool(ctx, 880, FRONT.top + 66, 220, 'rgba(255,198,120,0.4)', 0.4);
+  // the near edge turns down into a face, so the surface has thickness
+  ctx.fillStyle = '#40281a';
+  ctx.fillRect(L, FRONT.bottom - 16, W, 16);
+  ctx.fillStyle = 'rgba(255,196,126,0.28)';
+  ctx.fillRect(L, FRONT.bottom - 16, W, 2.5);
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.fillRect(L, FRONT.bottom - 20, W, 4);
 }
 
 /** The bar front: panelled wood, two niches of produce and the house plaque. */
@@ -384,10 +436,45 @@ export function drawRoom(ctx, t) {
   barFront(ctx);
   aisle(ctx);
   frontCounter(ctx);
+  // One light over the whole room: warm in from the upper left, cool fill off the right-hand wall.
+  keyWash(ctx, L, WALL.top, W, BOTTOM - WALL.top, 0.1, 0.16);
   // a soft vignette so the eye stays on the counters
-  const vignette = ctx.createRadialGradient(FIELD.width / 2, 440, 300, FIELD.width / 2, 440, 820);
+  const vignette = ctx.createRadialGradient(FIELD.width / 2, 440, 340, FIELD.width / 2, 440, 860);
   vignette.addColorStop(0, 'rgba(0,0,0,0)');
-  vignette.addColorStop(1, 'rgba(0,0,0,0.55)');
+  vignette.addColorStop(1, 'rgba(0,0,0,0.46)');
   ctx.fillStyle = vignette;
   ctx.fillRect(L, WALL.top - 200, W, BOTTOM - WALL.top + 200);
+}
+
+/**
+ * The air over the kitchen, painted after the furniture so it sits in front of it: the warm haze
+ * under the pass lamp, a cool drift in from the right, and two soft plumes off the pans. Kept thin —
+ * a frame has to stay crisp at thumbnail size.
+ */
+export function drawAtmosphere(ctx, t) {
+  const haze = ctx.createRadialGradient(1064, 300, 10, 1064, 300, 230);
+  haze.addColorStop(0, `rgba(255,214,150,${0.12 + 0.02 * Math.sin(t * 2.1)})`);
+  haze.addColorStop(0.45, 'rgba(255,206,136,0.05)');
+  haze.addColorStop(1, 'rgba(255,206,136,0)');
+  ctx.fillStyle = haze;
+  ctx.fillRect(L, 0, W, BOTTOM);
+
+  // steam off the two pans, made of overlapping ellipses that drift up and fade together
+  for (const [cx, base] of [[272, 306], [498, 306]]) {
+    for (let i = 0; i < 4; i += 1) {
+      const rise = ((t * 15 + i * 26) % 96);
+      const alpha = Math.max(0, 0.15 - rise * 0.0015);
+      const sway = Math.sin(t * 0.8 + i * 1.6) * 9;
+      ctx.fillStyle = `rgba(255,248,236,${alpha})`;
+      ctx.beginPath();
+      ctx.ellipse(cx - 12 + i * 8 + sway, base - rise, 26 + rise * 0.22, 15 + rise * 0.12, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  const fill = ctx.createLinearGradient(760, 0, 1340, 0);
+  fill.addColorStop(0, 'rgba(40,68,102,0)');
+  fill.addColorStop(1, 'rgba(34,60,92,0.2)');
+  ctx.fillStyle = fill;
+  ctx.fillRect(760, 0, 580, BOTTOM);
 }

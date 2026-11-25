@@ -7,7 +7,7 @@ import { INGREDIENTS, rawItem } from './pantry.js';
 import { drawIngredient, drawPlateBase, drawPlate } from './food.js';
 import { assemblySummary, drawAssemblyBadge, drawPlateInProgress } from './plating.js';
 import { drawPass } from './pass.js';
-import { fillRound, plank, ring } from './paint.js';
+import { castShadow, fillRound, plank, ring } from './paint.js';
 
 const MAX_PARTS = 4;
 const FONT = '"Trebuchet MS", "Segoe UI", Verdana, sans-serif';
@@ -217,8 +217,7 @@ function drawCrate(ctx, crate) {
   const ingredient = INGREDIENTS[crate.ingredient];
   ctx.save();
   ctx.translate(0, -lift);
-  ctx.fillStyle = 'rgba(0,0,0,0.35)';
-  ctx.fillRect(box.x + 4, box.y + box.h - 4, box.w - 8, 8);
+  castShadow(ctx, box.x + box.w / 2, box.y + box.h - 4, box.w * 0.62, 16, 0.5);
   plank(ctx, box.x, box.y, box.w, box.h, '#6f4c2e', '#5c3d23', '#96693c');
   // the dark inside of the crate, so the food reads against it
   fillRound(ctx, box.x + 5, box.y + 5, box.w - 10, box.h - 26, 3, 'rgba(46,30,16,0.55)');
@@ -286,6 +285,7 @@ function drawChopArm(ctx, box) {
 function drawBoard(ctx, world) {
   const { board } = world.kitchen;
   const { box } = board;
+  castShadow(ctx, box.x + box.w / 2, box.y + box.h - 2, box.w * 0.6, 15, 0.48);
   plank(ctx, box.x, box.y + 20, box.w, box.h - 20, '#c2955c', '#a8783f', '#dcb277');
   ctx.strokeStyle = 'rgba(90,60,30,0.45)';
   ctx.lineWidth = 2;
@@ -351,6 +351,8 @@ function drawBurner(ctx, burner, t) {
     ctx.fill();
   }
   ctx.globalAlpha = 1;
+  // the pan throws its weight onto the counter, down and to the right of the key
+  castShadow(ctx, cx, cy + 22, 86, 30, 0.5);
   // the iron ring the pan sits in: a thin dark collar, never a black wheel around the copper
   ctx.fillStyle = '#302a26';
   ctx.beginPath();
@@ -362,49 +364,91 @@ function drawBurner(ctx, burner, t) {
   ctx.ellipse(cx, cy + 4, 62, 37, 0, 0, Math.PI * 2);
   ctx.stroke();
   const item = burner.item;
-  ctx.fillStyle = 'rgba(0,0,0,0.34)';
+  ctx.fillStyle = '#5f2c12';
   ctx.beginPath();
   ctx.ellipse(cx, cy + 12, 58, 34, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = '#a8572c';
+  // the body of the pan: lit copper at the upper left, falling to a dark rim at the lower right
+  const body = ctx.createLinearGradient(cx - 58, cy - 34, cx + 58, cy + 34);
+  body.addColorStop(0, '#e88f4e');
+  body.addColorStop(0.28, '#c9703c');
+  body.addColorStop(0.72, '#9c4c24');
+  body.addColorStop(1, '#733216');
+  ctx.fillStyle = body;
   ctx.beginPath();
   ctx.ellipse(cx, cy, 58, 34, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = '#c9703c';
+  // the dark rolled rim, plus the thin line of light that runs round its upper left
+  ctx.strokeStyle = '#4e2110';
+  ctx.lineWidth = 3.5;
   ctx.beginPath();
-  ctx.ellipse(cx, cy - 4, 54, 30, 0, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.ellipse(cx, cy, 56, 32, 0, 0, Math.PI * 2);
+  ctx.stroke();
   const inner = ctx.createRadialGradient(cx - 8, cy - 12, 4, cx, cy - 4, 48);
-  inner.addColorStop(0, '#6b4a2c');
-  inner.addColorStop(1, '#3f2a1c');
+  inner.addColorStop(0, '#8a6540');
+  inner.addColorStop(0.55, '#5e4228');
+  inner.addColorStop(1, '#312014');
   ctx.fillStyle = inner;
   ctx.beginPath();
   ctx.ellipse(cx, cy - 4, 46, 25, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.strokeStyle = 'rgba(255,190,120,0.35)';
-  ctx.lineWidth = 3;
+  // the copper takes one long specular streak across its shoulder
+  ctx.save();
   ctx.beginPath();
-  ctx.ellipse(cx, cy - 2, 52, 29, 0, Math.PI * 1.05, Math.PI * 1.75);
+  ctx.ellipse(cx, cy, 58, 34, 0, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.globalAlpha = 0.5;
+  ctx.fillStyle = 'rgba(255,226,182,0.9)';
+  ctx.beginPath();
+  ctx.ellipse(cx - 24, cy - 16, 26, 5.5, -0.42, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 0.28;
+  ctx.fillStyle = 'rgba(255,214,158,1)';
+  ctx.beginPath();
+  ctx.ellipse(cx + 26, cy - 18, 15, 3.6, -0.32, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+  ctx.strokeStyle = 'rgba(255,206,150,0.5)';
+  ctx.lineWidth = 2.4;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy - 1, 54, 30, 0, Math.PI * 1.04, Math.PI * 1.66);
   ctx.stroke();
+  // the flame underneath comes back up the pan's far wall
+  const heatBack = ctx.createLinearGradient(0, cy + 20, 0, cy - 12);
+  heatBack.addColorStop(0, `rgba(255,132,52,${0.3 + burner.heat * 0.24})`);
+  heatBack.addColorStop(1, 'rgba(255,132,52,0)');
+  ctx.fillStyle = heatBack;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy - 2, 44, 22, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // oil: a shallow amber pool with one wet highlight and the browned bits that collect at its edge
+  ctx.fillStyle = 'rgba(150,86,30,0.55)';
+  ctx.beginPath();
+  ctx.ellipse(cx - 4, cy - 5, 38, 19, -0.05, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,224,158,0.24)';
+  ctx.beginPath();
+  ctx.ellipse(cx - 12, cy - 11, 22, 8, -0.14, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(88,44,16,0.62)';
+  for (let i = 0; i < 9; i += 1) {
+    const a = (i / 9) * Math.PI * 2 + 0.4;
+    ctx.beginPath();
+    ctx.arc(cx + Math.cos(a) * 33, cy - 2 + Math.sin(a) * 15, 1.9 + (i % 3) * 0.7, 0, Math.PI * 2);
+    ctx.fill();
+  }
   ctx.strokeStyle = '#7a4a26';
   ctx.lineWidth = 9;
   ctx.beginPath();
   ctx.moveTo(cx + 55, cy);
   ctx.lineTo(cx + 92, cy - 16);
   ctx.stroke();
-  // the sheen of hot butter across the bottom of the pan
-  ctx.save();
-  ctx.globalAlpha = 0.5 + 0.2 * Math.sin(t * 2.4 + burner.index);
-  ctx.fillStyle = 'rgba(255,226,168,0.5)';
+  ctx.strokeStyle = 'rgba(255,206,150,0.42)';
+  ctx.lineWidth = 2.5;
   ctx.beginPath();
-  ctx.ellipse(cx - 12, cy - 10, 30, 10, -0.16, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.globalAlpha = 0.3;
-  ctx.fillStyle = '#fff6e0';
-  ctx.beginPath();
-  ctx.ellipse(cx - 22, cy - 13, 12, 3.6, -0.2, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
+  ctx.moveTo(cx + 58, cy - 3);
+  ctx.lineTo(cx + 89, cy - 17);
+  ctx.stroke();
   if (item) {
     const state = item.state === 'burnt' ? 'burnt' : item.done ? 'seared' : 'raw';
     drawIngredient(ctx, item.ingredient, state, cx, cy - 6, 64);
@@ -438,8 +482,7 @@ function drawBurner(ctx, burner, t) {
 function drawPlateStation(ctx, kitchen, recipes) {
   const station = kitchen.plateStation;
   const { box } = station;
-  ctx.fillStyle = 'rgba(0,0,0,0.3)';
-  ctx.fillRect(box.x + 3, box.y + box.h - 5, box.w - 6, 9);
+  castShadow(ctx, box.x + box.w / 2, box.y + box.h, box.w * 0.58, 16, 0.46);
   plank(ctx, box.x, box.y, box.w, box.h, '#96663c', '#7a4f28', '#c08a4a');
   ctx.font = `700 10px ${FONT}`;
   ctx.fillStyle = 'rgba(246,231,205,0.62)';
@@ -525,10 +568,15 @@ export function drawStations(ctx, world, t, near) {
 
   for (const cloud of kitchen.smoke) {
     ctx.save();
-    ctx.globalAlpha = Math.max(0, cloud.life) * 0.26;
-    ctx.fillStyle = '#f2e6d2';
+    const alpha = Math.max(0, cloud.life) * 0.3;
+    const size = cloud.size * (1.2 - cloud.life * 0.4);
+    const puff = ctx.createRadialGradient(cloud.x, cloud.y, 0, cloud.x, cloud.y, size);
+    puff.addColorStop(0, `rgba(246,236,220,${alpha})`);
+    puff.addColorStop(0.55, `rgba(240,228,208,${alpha * 0.55})`);
+    puff.addColorStop(1, 'rgba(240,228,208,0)');
+    ctx.fillStyle = puff;
     ctx.beginPath();
-    ctx.arc(cloud.x, cloud.y, cloud.size * (1.2 - cloud.life * 0.4), 0, Math.PI * 2);
+    ctx.arc(cloud.x, cloud.y, size, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }

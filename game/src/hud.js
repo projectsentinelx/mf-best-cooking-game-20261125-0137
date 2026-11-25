@@ -47,10 +47,32 @@ function drawTicket(ctx, ticket, x, y, served) {
   ctx.shadowColor = 'rgba(0,0,0,0.45)';
   ctx.shadowBlur = 10;
   ctx.shadowOffsetY = 4;
-  fillRound(ctx, 0, 0, TICKET_W, TICKET_H, 4, cardColor);
+  // the paper is not one flat cream: it takes the room's warm key at the top left and shades off
+  // toward the near corner, with a fold across it where the printer creased it
+  const paper = ctx.createLinearGradient(0, 0, TICKET_W * 0.7, TICKET_H);
+  paper.addColorStop(0, mood === 'urgent' ? '#fde7d6' : '#fdf4e2');
+  paper.addColorStop(0.55, cardColor);
+  paper.addColorStop(1, mood === 'urgent' ? '#e6c3ae' : '#e8d8bd');
+  fillRound(ctx, 0, 0, TICKET_W, TICKET_H, 4, paper);
   ctx.shadowColor = 'transparent';
   ctx.shadowBlur = 0;
   ctx.shadowOffsetY = 0;
+  // the fold: a soft dark line and a lighter one just under it
+  ctx.fillStyle = 'rgba(120,86,48,0.13)';
+  ctx.fillRect(2, 50, TICKET_W - 4, 3);
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.fillRect(2, 53, TICKET_W - 4, 1.5);
+  // a torn bottom edge: the printer never cuts these straight
+  ctx.fillStyle = cardColor;
+  for (let i = 0; i < 9; i += 1) {
+    const tx = 4 + i * (TICKET_W - 8) / 9;
+    ctx.beginPath();
+    ctx.moveTo(tx, TICKET_H - 4);
+    ctx.lineTo(tx + 8, TICKET_H - 4);
+    ctx.lineTo(tx + 4, TICKET_H - 0.5 + (i % 3) * 0.8);
+    ctx.closePath();
+    ctx.fill();
+  }
 
   ctx.fillStyle = ticket.special ? '#c9992c' : mood === 'urgent' ? '#a83a2c' : '#7a5c3a';
   ctx.fillRect(0, 0, TICKET_W, ticket.special ? 6 : 4);

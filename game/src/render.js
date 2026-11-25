@@ -2,7 +2,7 @@
 // a card instead when the shift has not started, is paused or is over. The 1280x720 stage is fitted
 // to the window and centred so screenshots and play match pixel for pixel.
 import { FIELD, FONT, PALETTE } from './config.js';
-import { drawRoom } from './room.js';
+import { drawRoom, drawAtmosphere } from './room.js';
 import { drawStations } from './stations.js';
 import { drawChef } from './chef.js';
 import { drawRail, drawRushBanner } from './hud.js';
@@ -230,11 +230,12 @@ export function createRenderer(canvas) {
     drawRoom(ctx, t);
     drawStations(ctx, world, t, world.screen === 'play' ? world.lastStation : null);
     drawChef(ctx, world.chef, t);
+    drawAtmosphere(ctx, t);
     ctx.restore();
     // a screen-space vignette closes the frame whatever the camera is doing
-    const edge = ctx.createRadialGradient(FIELD.width / 2, FIELD.height / 2, 240, FIELD.width / 2, FIELD.height / 2, 780);
+    const edge = ctx.createRadialGradient(FIELD.width / 2, FIELD.height / 2, 300, FIELD.width / 2, FIELD.height / 2, 800);
     edge.addColorStop(0, 'rgba(0,0,0,0)');
-    edge.addColorStop(1, 'rgba(0,0,0,0.42)');
+    edge.addColorStop(1, 'rgba(0,0,0,0.38)');
     ctx.fillStyle = edge;
     ctx.fillRect(0, 0, FIELD.width, FIELD.height);
 

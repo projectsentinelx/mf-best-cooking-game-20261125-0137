@@ -54,7 +54,7 @@ export function stageShot(name, world) {
   if (name === 'chopping') {
     // Close on the board: the knife is halfway through a tomato, the pieces it has already made are
     // at the near edge, the ring says how far the chop has run, and the cook's arm is over it.
-    world.camera = { x: 906, y: 500, zoom: 1.55 };
+    world.camera = { x: 934, y: 385, zoom: 1.55 };
     world.time = SHIFT_SECONDS - 31;
     world.progress = 0.17;
     world.earned = 44;
@@ -70,6 +70,8 @@ export function stageShot(name, world) {
     world.kitchen.burners[0].flare = 0.45;
     steam(world.kitchen, 272, 300, 3, 14);
     teleportChef(world.chef, 872, 452);
+    // stood right up against the board so the arm, the knife and the tomato read as one gesture
+    world.chef.y = 458;
     world.chef.facing = 1;
     world.chef.carry = null;
     for (let i = 0; i < 7; i += 1) {
@@ -78,7 +80,7 @@ export function stageShot(name, world) {
   } else if (name === 'plating') {
     // Close on the plate line: two of three components stacked on the plate, the third still to go,
     // and a finished dish already waiting under the pass lamp behind it.
-    world.camera = { x: 1042, y: 418, zoom: 1.5 };
+    world.camera = { x: 845, y: 372, zoom: 1.45 };
     world.time = 96;
     world.progress = 0.47;
     world.earned = 154;

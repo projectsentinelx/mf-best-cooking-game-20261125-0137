@@ -464,7 +464,8 @@ function drawPlateStation(ctx, kitchen, recipes) {
     ctx.font = `600 11px ${FONT}`;
     ctx.fillStyle = 'rgba(255,250,238,0.75)';
     ctx.textAlign = 'center';
-    ctx.fillText('clean plate', cx, box.y + box.h - 12);
+    // tucked under the plate's rim, clear of the stack of clean plates behind it
+    ctx.fillText('clean plate', cx, box.y + box.h + 2);
   }
 }
 
